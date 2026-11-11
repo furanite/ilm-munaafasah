@@ -1,4 +1,4 @@
-# Ilm Munfasah
+# Munaafasatul Ilm (منافسة العلم)
 
 The Islamic edition of Get Grilled, a quiz-board game for team competitions. This site shows only the
 Islamic and Kids collections. The code is the same as the Get Grilled app; `npm run build:islamic`
