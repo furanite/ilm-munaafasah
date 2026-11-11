@@ -30,7 +30,7 @@ async function newPage(opts = {}) {
   const { noConsent, ...ctxOpts } = opts
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...ctxOpts })
   // Most tests start as a player who has already accepted the current Terms.
-  if (!noConsent) await ctx.addInitScript(() => { if (!localStorage.getItem('gg.consent.v1')) localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.1', date: '2026-11-10T00:00:00Z' })) })
+  if (!noConsent) await ctx.addInitScript(() => { if (!localStorage.getItem('gg.consent.v1')) localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.2', date: '2026-11-11T00:00:00Z' })) })
   const page = await ctx.newPage()
   page.requests = []
   page.on('request', (r) => page.requests.push(r.url()))
