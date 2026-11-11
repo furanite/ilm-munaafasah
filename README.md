@@ -4,7 +4,7 @@ The Islamic edition of Get Grilled, a quiz-board game for team competitions. Thi
 Islamic and Kids collections. The code is the same as the Get Grilled app; `npm run build:islamic`
 builds the edition (it sets `PACK_EDITION=islamic`).
 
-Live site: https://furanite.github.io/ilm-munfasah/ (host edition at `/host/`).
+Live site: https://furanite.github.io/ilm-munaafasah/ (host edition at `/host/`).
 
 ## Run it
 
