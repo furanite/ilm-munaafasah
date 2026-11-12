@@ -15,6 +15,7 @@
 // Lines starting with # (but not ##) are comments. Exits non-zero on any problem.
 // Arabic: questions/ar/<same file name> has the same ## headings and one
 // "ClueAr :: AnswerAr" line per question, in the same order as the English file.
+import { toSigns } from './signs.mjs'
 import { isMadhhabFile, schoolsOf } from './schools.mjs'
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, rmSync, cpSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -93,7 +94,7 @@ export function parsePack(text, file = 'pack') {
       else seen.set(key, at)
     })
   })
-  const clean = ({ q, a, kind, src, img, sch }) => ({ q, a, ...(kind ? { kind } : {}), ...(src ? { src } : {}), ...(img ? { img } : {}), ...(sch ? { sch } : {}) })
+  const clean = ({ q, a, kind, src, img, sch }) => ({ q: toSigns(q), a: toSigns(a), ...(kind ? { kind } : {}), ...(src ? { src } : {}), ...(img ? { img } : {}), ...(sch ? { sch } : {}) })
   return { meta, levels: levels.map((l) => l.map(clean)), unchecked: unchecked.map(({ level, at, ...x }) => ({ level, at, ...clean(x) })), errors }
 }
 
@@ -167,7 +168,7 @@ export function loadReviews(dir = reviewsDir) {
 const flagged = (rs) => (rs ?? []).some((r) => r.correct === 'issue' || r.adab === 'issue')
 
 // Themed nights: questions/nights.json, a list of ready-made game setups.
-//   { "id", "name", "nameAr"?, "about", "aboutAr"?, "cats": [1 to 6 category ids], "teams"?: [2 to 4 names], "teamsAr"?,
+//   { "id", "name", "nameAr"?, "about", "aboutAr"?, "sign"? (one honorific sign shown in place of the icon), "cats": [1 to 6 category ids], "teams"?: [2 to 4 names], "teamsAr"?,
 //     "extras"?: { "golden": 0-3, "steal": 0-3, "crowd": 0-2, "streak", "comeback", "lightning", "final": true/false } }
 export function checkNights(nights, ids) {
   const errors = []
@@ -184,6 +185,7 @@ export function checkNights(nights, ids) {
     if (!Array.isArray(n.cats) || n.cats.length < 1 || n.cats.length > 6) errors.push(`${at} needs 1 to 6 "cats"`)
     else for (const c of n.cats) if (!ids.includes(c)) errors.push(`${at} unknown category "${c}"`)
     for (const k of ['teams', 'teamsAr']) if (n[k] !== undefined && (!Array.isArray(n[k]) || n[k].length < 2 || n[k].length > 4 || n[k].some((t) => typeof t !== 'string' || !t.trim() || t.length > 24))) errors.push(`${at} "${k}" must be 2 to 4 names of up to 24 characters`)
+    if (n.sign !== undefined && !/^[\uFD40-\uFD4F\uFDFA]$/.test(n.sign)) errors.push(`${at} "sign" must be one honorific sign such as ﷺ`)
     const x = n.extras ?? {}
     for (const [k, max] of [['golden', 3], ['steal', 3], ['crowd', 2]]) if (x[k] !== undefined && !(Number.isInteger(x[k]) && x[k] >= 0 && x[k] <= max)) errors.push(`${at} extras.${k} must be 0 to ${max}`)
     for (const k of ['streak', 'comeback', 'lightning', 'final']) if (x[k] !== undefined && typeof x[k] !== 'boolean') errors.push(`${at} extras.${k} must be true or false`)
@@ -237,9 +239,9 @@ function main() {
     }
     // PACK_EDITION=islamic builds a site with only the Islamic and Kids collections (used by the Ilm Munfasah site).
     if (process.env.PACK_EDITION === 'islamic' && !respect) continue
-    const pack = { id: meta.id, name: meta.name, nameAr: meta.nameAr, group: meta.group, respect, levels }
+    const pack = { id: meta.id, name: toSigns(meta.name), nameAr: meta.nameAr, group: meta.group, respect, levels }
     writeFileSync(join(outDir, `${meta.id}.json`), JSON.stringify(pack))
-    index.push({ id: meta.id, name: meta.name, nameAr: meta.nameAr, group: meta.group, counts: levels.map((l) => l.length) })
+    index.push({ id: meta.id, name: toSigns(meta.name), nameAr: meta.nameAr, group: meta.group, counts: levels.map((l) => l.length) })
     console.log(`${meta.id.padEnd(18)} ${levels.map((l) => String(l.length).padStart(4)).join(' ')}  total ${levels.reduce((s, l) => s + l.length, 0)}  arabic ${arCount}`)
   }
   const ids = index.map((c) => c.id)
@@ -263,7 +265,7 @@ function main() {
     console.error(nightErrors.join('\n'))
     process.exit(1)
   }
-  writeFileSync(join(outDir, 'nights.json'), JSON.stringify(nights))
+  writeFileSync(join(outDir, 'nights.json'), JSON.stringify(nights, (k, v) => (typeof v === 'string' ? toSigns(v) : v)))
   console.log(`${nights.length} themed nights`)
 }
 
