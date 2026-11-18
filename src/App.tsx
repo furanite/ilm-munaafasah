@@ -26,6 +26,8 @@ import { APP_NAME, HOST_EDITION, appName, type Live } from './lib/edition'
 import { setFavicon } from './lib/favicon'
 import { Mark } from './components/Brand'
 import { HostLink } from './components/HostLink'
+import { BuzzButton } from './components/Buzzers'
+import { DevicesButton, SignOut, isLiveServer, useHostAudience, usePublisher } from './components/LiveHost'
 
 export default function App() {
   const initial = useMemo(loadSettings, [])
@@ -54,6 +56,10 @@ export default function App() {
   const audience = useAudienceWindow(APP_NAME)
   const themeRef = useRef(theme)
   const t = STRINGS[lang]
+  const liveHost = HOST_EDITION && isLiveServer()
+  // On the Pi: send the projector and team tablets what the room may see.
+  const crowd = useHostAudience()
+  usePublisher({ screen, game, live: screen === 'game' ? live : null, vote: screen === 'setup' ? vote : null, theme, lang, reduceFx, audience: crowd }, liveHost)
   const inGame = screen === 'intro' || screen === 'game' || screen === 'mode' || screen === 'lightning' || screen === 'final' || screen === 'round'
 
   useEffect(() => {
@@ -197,6 +203,9 @@ export default function App() {
                 </button>
               )}
               {!HOST_EDITION && <HostLink lang={lang} />}
+              <BuzzButton t={t} lang={lang} teams={game?.teams ?? []} />
+              {liveHost && <DevicesButton t={t} lang={lang} game={game} />}
+              {liveHost && <SignOut t={t} />}
               {inGame && (
                 <button
                   className="ghost"
