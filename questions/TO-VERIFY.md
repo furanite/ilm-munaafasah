@@ -42,8 +42,14 @@ This file is rewritten by `npm run packs`.
 
 ## Islamic history (questions/isl-history.txt)
 
-- **500**, line 106: The Ayyubid-era scholar who wrote "Mir'at al-Zaman". **Answer:** Sibt ibn al-Jawzi _(Source: Mir'at al-Zaman; creed to be checked before adding an honorific)_
-- **500**, line 124: The scholar who taught and advised Sultan Muhammad al-Fatih ⁨رحمة الله عليه⁩ and is said to have found the grave of Abu Ayyub ﵁. **Answer:** Aq Shams al-Din ⁨رحمة الله عليه⁩ _(Source: al-Shaqa'iq al-Nu'maniyyah (Tashkopruzade); to be checked)_
+- **500**, line 145: The Ayyubid-era scholar who wrote "Mir'at al-Zaman". **Answer:** Sibt ibn al-Jawzi _(Source: Mir'at al-Zaman; creed to be checked before adding an honorific)_
+- **500**, line 163: The scholar who taught and advised Sultan Muhammad al-Fatih ⁨رحمة الله عليه⁩ and is said to have found the grave of Abu Ayyub ﵁. **Answer:** Aq Shams al-Din ⁨رحمة الله عليه⁩ _(Source: al-Shaqa'iq al-Nu'maniyyah (Tashkopruzade); to be checked)_
+
+## Ilahis: Turkey and the Balkans (questions/isl-ilahi-turkey.txt)
+
+- **200**, line 28: The ilahi-like hymns sung between the parts of the Mevlid. **Answer:** Tevşih _(Source: Standard reference; check the term)_
+- **300**, line 32: Süleyman Çelebi ⁨رحمة الله عليه⁩ was imam of this mosque in Bursa, by the common report. **Answer:** The Ulu Cami (Great Mosque) _(Source: Standard history; reports differ on which mosque)_
+- **500**, line 58: The famous Turkish takbir of the Eid days is often credited to this composer. **Answer:** Itri ⁨رحمة الله عليه⁩ _(Source: Standard reference; the credit is traditional)_
 
 ## Pillars of faith (questions/isl-iman.txt)
 
@@ -63,16 +69,51 @@ This file is rewritten by `npm run packs`.
 
 - **500**, line 158: In the Hanafi school, salam requires this many conditions, including a known term and place. **Answer:** 7 _(Source: al-Hidayah (al-Marghinani); count to be checked)_
 
+## Naats: South Asia (questions/isl-naat-southasia.txt)
+
+- **200**, line 28: The Hindavi and Persian music of Sufi gatherings that Amir Khusraw ⁨رحمة الله عليه⁩ is said to have shaped. **Answer:** Qawwali _(Source: Standard reference; the credit is traditional)_
+- **500**, line 60: The Sindhi poet Sachal Sarmast ⁨رحمة الله عليه⁩ wrote in Sindhi, Seraiki and this language. **Answer:** Persian (and Urdu) _(Source: Standard history; check)_
+
 ## Nahw (grammar) (questions/isl-nahw.txt)
 
 - **500**, line 135: The commentary on al-Ajurrumiyyah by Khalid al-Azhari ⁨رحمة الله عليه⁩. **Answer:** Sharh al-Azhariyyah _(Source: Title to be checked)_
-- **500**, line 144: The Kufan grammarian reported to have said he would die with something still in his heart about "hatta". **Answer:** al-Farra' ⁨رحمة الله عليه⁩ _(Source: Mughni al-Labib (Ibn Hisham); to be checked)_
+- **500**, line 144: The Kufan grammarian reported to have said he would pass away with something still in his heart about "hatta". **Answer:** al-Farra' ⁨رحمة الله عليه⁩ _(Source: Mughni al-Labib (Ibn Hisham); to be checked)_
 - **500**, line 147: The Basran grammarian, student of al-Khalil, who wrote "Ma'ani al-Qur'an" and taught Sibawayh's ⁨رحمة الله عليه⁩ما book. **Answer:** al-Akhfash al-Awsat ⁨رحمة الله عليه⁩ _(Source: Bughyat al-Wu'at (al-Suyuti); to be checked)_
+
+## Nasheeds: Africa and the Maghrib (questions/isl-nasheed-africa.txt)
+
+- **200**, line 21: The Sudanese poet of the 13th century AH who wrote hundreds of praise poems still sung in Sudan. **Answer:** Hajj al-Mahi ⁨رحمة الله عليه⁩ _(Source: Standard reference on Sudanese madih; check his dates)_
+- **200**, line 24: The Senegalese scholar of Kaolack known as "Shaykh al-Islam" whose six Diwans praise our Beloved Prophet ﷺ. **Answer:** Shaykh Ibrahim Niasse ⁨رحمة الله عليه⁩ _(Source: al-Dawawin al-Sitt; check the title)_
+- **500**, line 59: Habib Salih Jamal al-Layl ⁨رحمة الله عليه⁩, who started the Lamu Maulidi, came to Lamu from this island group. **Answer:** The Comoros _(Source: Standard history; check his place of birth)_
+- **500**, line 60: The Swahili "Utendi wa Hamziyya" manuscript is dated about this year. **Answer:** 1062 AH / 1652 CE _(Source: Standard reference on Swahili manuscripts; check the date)_
+- **500**, line 64: The Somali form of praise of our Beloved Prophet ﷺ, chanted in Somali at gatherings. **Answer:** Nabi ammaan _(Source: Standard reference; check the term)_
+- **500**, line 70: The Mouride groups that chant Shaykh Ahmadu Bamba's ⁨رحمة الله عليه⁩ poems together are called this in Wolof. **Answer:** Kurel _(Source: Standard reference; check the term)_
+
+## Nasheeds: Arabia, Levant, Egypt (questions/isl-nasheed-arabia.txt)
+
+- **500**, line 58: The scholar who said a gift of a cloak to Ka'b ﵁ for Banat Su'ad has no sound chain, though the poem's recital is well known. **Answer:** Ibn Kathir ⁨رحمة الله عليه⁩ (among others) _(Source: al-Bidayah wal-Nihayah (Ibn Kathir); check the wording of his verdict)_
+- **500**, line 59: The 7th-century AH poet whose collection of praise poems was arranged in 29 poems, one for each letter. **Answer:** al-Witri (Ibn Rashid al-Baghdadi) ⁨رحمة الله عليه⁩ _(Source: al-Qasa'id al-Witriyyah; check the poet's dates)_
+
+## Naats: Persia and Central Asia (questions/isl-nasheed-persia.txt)
+
+- **400**, line 45: The famous Arabic quatrain on our Beloved Prophet ﷺ beginning "Balagha al-'ula bi-kamalihi" is credited to this poet. **Answer:** Sa'di ⁨رحمة الله عليه⁩ (by the common attribution) _(Source: Standard attribution; not in all old copies of his works)_
+- **400**, line 46: 'Attar ⁨رحمة الله عليه⁩ is said to have been killed in this event in Nishapur. **Answer:** The Mongol conquest (618 AH / 1221 CE) _(Source: Standard history; the report is not certain)_
+- **400**, line 48: Nizami ⁨رحمة الله عليه⁩ passed away in about this year. **Answer:** 605 AH / 1209 CE _(Source: Standard history; dates differ)_
+- **500**, line 58: Nizami's ⁨رحمة الله عليه⁩ "Makhzan al-Asrar" has four passages in praise of our Beloved Prophet ﷺ, including one on this event. **Answer:** The Mi'raj _(Source: Makhzan al-Asrar; check the count)_
+
+## Nasheeds: Southeast Asia (questions/isl-nasheed-seasia.txt)
+
+- **200**, line 24: The Javanese song "Tombo Ati" (medicine for the heart) is traditionally credited to this one of the nine saints. **Answer:** Sunan Bonang ⁨رحمة الله عليه⁩ _(Source: Standard reference; the credit is traditional)_
+- **300**, line 29: Kiai 'Ali Manshur ⁨رحمة الله عليه⁩, who wrote Sholawat Badar, lived in this region of East Java. **Answer:** Banyuwangi (and Tuban) _(Source: Standard reference; check)_
+- **300**, line 31: The Javanese song "Lir-ilir" is traditionally credited to this one of the nine saints. **Answer:** Sunan Kalijaga ⁨رحمة الله عليه⁩ _(Source: Standard reference; the credit is traditional)_
+- **500**, line 56: The NU scholar who wrote the Indonesian song "Ya Lal Wathon" in the 1930s. **Answer:** Kiai 'Abd al-Wahhab Hasbullah ⁨رحمة الله عليه⁩ _(Source: Standard reference; check)_
+- **500**, line 57: Sholawat Badar was written in this decade of the 20th century CE. **Answer:** The 1960s _(Source: Standard reference; check)_
+- **500**, line 58: The Malay ceremony of reading the Blessed Mawlid at a wedding or for a baby is often led by groups named after this Arabic welcome. **Answer:** Marhaban _(Source: check)_
 
 ## Blessed Prophets ﵈: Adam to Ibrahim (questions/isl-prophets-early.txt)
 
-- **400**, line 77: In a report of Abu Dharr ﵁, four Arab Blessed Prophets ﵈ are named: Hud, Salih, Shu'ayb and this one. **Answer:** Our Beloved Prophet Muhammad ﷺ _(Source: Sahih Ibn Hibban; to be checked)_
-- **400**, line 81: The city our master Ibrahim ﵇ came from, by the common view of historians. **Answer:** Ur (in Iraq) _(Source: Tarikh al-Tabari; to be checked)_
+- **400**, line 89: In a report of Abu Dharr ﵁, four Arab Blessed Prophets ﵈ are named: Hud, Salih, Shu'ayb and this one. **Answer:** Our Beloved Prophet Muhammad ﷺ _(Source: Sahih Ibn Hibban; to be checked)_
+- **400**, line 93: The city our master Ibrahim ﵇ came from, by the common view of historians. **Answer:** Ur (in Iraq) _(Source: Tarikh al-Tabari; to be checked)_
 
 ## The Qur'an (questions/isl-quran.txt)
 
@@ -114,6 +155,19 @@ This file is rewritten by `npm run packs`.
 
 - **500**, line 123: The scholar who wrote Bidayat al-Mujtahid on comparing the schools. **Answer:** Ibn Rushd ⁨رحمة الله عليه⁩ (the grandson) _(Source: Bidayat al-Mujtahid; check creed before adding an honorific)_
 
+## The Hanbali School (questions/isl-school-hanbali.txt)
+
+- **500**, line 117: In the Hanbali school, when the moon is hidden by cloud on the night of the 30th of Sha'ban, the relied view is that the next day is this. **Answer:** Fasted as a precaution with the intention of Ramadan _(Source: Zad al-Mustaqni' (al-Hajjawi); check wording)_
+
+## The Maliki School (questions/isl-school-maliki.txt)
+
+- **500**, line 119: The four main books of the early Maliki school, with the Mudawwanah, are called this group name. **Answer:** The Ummahat (mother books) _(Source: Tartib al-Madarik (Qadi 'Iyad); check the list of four)_
+
+## The Shafi'i School (questions/isl-school-shafii.txt)
+
+- **500**, line 117: In the Shafi'i school, when Ibn Hajar and al-Ramli ⁨رحمة الله عليه⁩ما differ, scholars of Egypt mostly follow this one. **Answer:** al-Ramli ⁨رحمة الله عليه⁩ _(Source: well-known convention; check wording)_
+- **500**, line 118: In the Shafi'i school, when Ibn Hajar and al-Ramli ⁨رحمة الله عليه⁩ما differ, scholars of Hadramawt and Yemen mostly follow this one. **Answer:** Ibn Hajar al-Haytami ⁨رحمة الله عليه⁩ _(Source: well-known convention; check wording)_
+
 ## Blessed Seerah: the Madinan years (questions/isl-seerah-madinah.txt)
 
 - **500**, line 127: Our Beloved Prophet ﷺ said to Quraysh at the opening of Makkah: "Go, you are free" (meaning). The name for those set free. **Answer:** al-Tulaqa' (those set free) _(Source: Sirat Ibn Hisham; wording to be checked)_
@@ -131,14 +185,14 @@ This file is rewritten by `npm run packs`.
 - **400**, line 166: The Hanafi scholar who wrote Ahkam al-Qur'an, d. 370 AH / 981 CE. **Answer:** Abu Bakr al-Jassas ⁨رحمة الله عليه⁩ _(Source: Ahkam al-Qur'an (al-Jassas); some biographers say al-Jassas leaned to Mu'tazili views, so check before using)_
 - **400**, line 192: The tafsir by Ibn 'Abd al-Salam ⁨رحمة الله عليه⁩, the "Sultan of the Scholars", is a summary of this (meaning). **Answer:** al-Mawardi's ⁨رحمة الله عليه⁩ tafsir al-Nukat wal-'Uyun _(Source: Check which tafsir Ibn 'Abd al-Salam summarised)_
 - **400**, line 196: The rough number of meanings of the word "huda" (guidance) in the al-Wujuh wal-Naza'ir books. **Answer:** About 17 _(Source: Count in Muqatil's al-Wujuh; later books differ, to be checked)_
-- **400**, line 198: The tafsir of al-Baydawi ⁨رحمة الله عليه⁩ was finished in this city. **Answer:** Tabriz _(Source: Check: al-Baydawi died in Tabriz; where he finished it is uncertain)_
+- **400**, line 198: The tafsir of al-Baydawi ⁨رحمة الله عليه⁩ was finished in this city. **Answer:** Tabriz _(Source: Check: al-Baydawi passed away in Tabriz; where he finished it is uncertain)_
 - **500**, line 245: The tafsir "Tafsir al-Mawahib al-'Aliyyah" (in Persian) is by this Herat scholar. **Answer:** Husayn Wa'iz al-Kashifi _(Source: Check his creed before giving an honorific)_
 
 ## Fiqh: Cleanliness (Taharah) (questions/isl-taharah.txt)
 
-- **400**, line 164: The two qullahs are about this much water in today's measures, by a common estimate. **Answer:** About 190 to 270 litres _(Source: Modern estimates differ; to be checked)_
-- **400**, line 189: In the Hanafi school, a woman's habit ('adah) in hayd is set by it happening this many times. **Answer:** Once _(Source: al-Hidayah (al-Marghinani); check Abu Yusuf's view (once) against that of Abu Hanifah and Muhammad (twice))_
-- **500**, line 263: The famous chapter in the books of hadith on wiping over khuffs says this many Companions ⁨(رِضْوَانُ اللَّهِ عَلَيْهِمْ)⁩ narrated it, by al-Hasan al-Basri's ⁨رحمة الله عليه⁩ count. **Answer:** 70 _(Source: Fath al-Bari (Ibn Hajar); check the wording of al-Hasan's report)_
+- **400**, line 172: The two qullahs are about this much water in today's measures, by a common estimate. **Answer:** About 190 to 270 litres _(Source: Modern estimates differ; to be checked)_
+- **400**, line 197: In the Hanafi school, a woman's habit ('adah) in hayd is set by it happening this many times. **Answer:** Once _(Source: al-Hidayah (al-Marghinani); check Abu Yusuf's view (once) against that of Abu Hanifah and Muhammad (twice))_
+- **500**, line 271: The famous chapter in the books of hadith on wiping over khuffs says this many Companions ⁨(رِضْوَانُ اللَّهِ عَلَيْهِمْ)⁩ narrated it, by al-Hasan al-Basri's ⁨رحمة الله عليه⁩ count. **Answer:** 70 _(Source: Fath al-Bari (Ibn Hajar); check the wording of al-Hasan's report)_
 
 ## Tajwid (questions/isl-tajwid.txt)
 
@@ -169,8 +223,8 @@ This file is rewritten by `npm run packs`.
 ## Fiqh: Zakat (questions/isl-zakat.txt)
 
 - **200**, line 99: The share for the "hearts to be won over" was stopped in the time of this caliph, by the Hanafi view (meaning). **Answer:** Our master 'Umar ﵁, in our master Abu Bakr's ﵁ time _(Source: al-Hidayah; check the wording of the report)_
-- **400**, line 203: In the Hanafi school, zakat al-fitr in raisins is half a sa' by Abu Hanifah's ⁨رحمة الله عليه⁩ view in one report. Those who say a full sa'. **Answer:** The two students (and the relied view) _(Source: al-Hidayah; check which view is relied upon)_
-- **500**, line 249: The Companion who said "Zakat is a bridge of Islam" (meaning). **Answer:** Abu al-Darda' ﵁ _(Source: check the source of this saying)_
+- **400**, line 207: In the Hanafi school, zakat al-fitr in raisins is half a sa' by Abu Hanifah's ⁨رحمة الله عليه⁩ view in one report. Those who say a full sa'. **Answer:** The two students (and the relied view) _(Source: al-Hidayah; check which view is relied upon)_
+- **500**, line 253: The Companion who said "Zakat is a bridge of Islam" (meaning). **Answer:** Abu al-Darda' ﵁ _(Source: check the source of this saying)_
 
 ## Our Beloved Prophet ﷺ (questions/kids-seerah.txt)
 

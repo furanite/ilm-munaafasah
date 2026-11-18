@@ -5,7 +5,7 @@ interface PackFile {
   name: string
   nameAr?: string
   respect?: boolean
-  levels: { q: string; a: string; qAr?: string; aAr?: string; kind?: 'H' | 'D' | 'F'; src?: string; img?: string; sch?: string }[][]
+  levels: { q: string; a: string; qAr?: string; aAr?: string; kind?: 'H' | 'D' | 'F'; src?: string; img?: string; credit?: string; sch?: string }[][]
 }
 
 const base = import.meta.env.BASE_URL
@@ -58,6 +58,8 @@ export interface Night {
   teamsAr?: string[]
   /** An honorific sign shown in place of an icon (Blessed Mawlid Night shows ﷺ). */
   sign?: string
+  /** A school night plays by this school of fiqh (h Hanafi, m Maliki, s Shafi'i, b Hanbali). */
+  madhhab?: 'h' | 'm' | 's' | 'b'
   extras?: { golden?: number; steal?: number; crowd?: number; streak?: boolean; comeback?: boolean; lightning?: boolean; final?: boolean }
 }
 

@@ -26,7 +26,7 @@ interface Props {
 type CollectionId = 'university' | 'islamic' | 'kids'
 const COLLECTIONS: { id: CollectionId; groups: PackGroup[] }[] = [
   { id: 'university', groups: ['engineering', 'cces', 'general'] },
-  { id: 'islamic', groups: ['quran', 'hadith', 'aqidah', 'fiqh', 'prophets', 'arabic', 'tazkiyah', 'islamichistory'] },
+  { id: 'islamic', groups: ['quran', 'hadith', 'aqidah', 'fiqh', 'prophets', 'arabic', 'tazkiyah', 'islamichistory', 'nasheed'] },
   { id: 'kids', groups: ['kids'] },
 ]
 const collectionOf = (g: PackGroup) => COLLECTIONS.find((c) => c.groups.includes(g))?.id ?? 'university'
@@ -90,6 +90,11 @@ export default function Setup({ t, lang, index, indexError, custom, pools, onBac
     setNightNote(cats.length < n.cats.length ? t.nightMissing : '')
     const names = lang === 'ar' && n.teamsAr ? n.teamsAr : n.teams
     if (names) setTeams(names.slice(0, 4))
+    // A school night (Hanafi Night and so on) sets the school of fiqh its rulings follow.
+    if (n.madhhab) {
+      setMadhhab(n.madhhab)
+      saveMadhhab(n.madhhab)
+    }
     const x = n.extras ?? {}
     setExtras(true)
     if (x.golden !== undefined) setGolden(x.golden)
@@ -191,7 +196,7 @@ export default function Setup({ t, lang, index, indexError, custom, pools, onBac
             const groupName: Record<PackGroup, string> = {
               engineering: t.groupEngineering, cces: t.groupCces, general: t.groupGeneral,
               quran: t.groupQuran, hadith: t.groupHadith, aqidah: t.groupAqidah, fiqh: t.groupFiqh, prophets: t.groupProphets,
-              arabic: t.groupArabic, tazkiyah: t.groupTazkiyah, islamichistory: t.groupIslamicHistory, kids: t.groupKids,
+              arabic: t.groupArabic, tazkiyah: t.groupTazkiyah, islamichistory: t.groupIslamicHistory, nasheed: t.groupNasheed, kids: t.groupKids,
             }
             const collName: Record<CollectionId, string> = { university: t.collUniversity, islamic: t.collIslamic, kids: t.collKids }
             const groupOf = (c: CategorySummary): PackGroup => c.group ?? 'general'
