@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Category, CategorySummary, Game, Lang, PoolEdit, Screen, ThemeId } from './lib/types'
 import { hasConsent, loadCustom, loadGame, loadPools, loadSettings, saveCustom, saveGame, savePools, saveSettings, saveTipsSeen, tipsSeen } from './lib/store'
-import { isEmptyPool, nextStage } from './lib/game'
-import { setSoundEnabled, unlockAudio } from './lib/sound'
+import { INTRO_MS, enterRound, finishIntro, isEmptyPool, nextRound, nextStage } from './lib/game'
+import { setSoundEnabled, sfx, unlockAudio } from './lib/sound'
 import { CONSENT_TEXT, LEGAL } from './lib/legal'
 import { ConsentDialog, Footer, LegalViewer } from './components/Legal'
 import { RulesDialog, TipsDialog } from './components/Guide'
@@ -14,9 +14,12 @@ import { STRINGS } from './lib/i18n'
 import Home from './components/Home'
 import Setup from './components/Setup'
 import Board from './components/Board'
+import TeamIntro from './components/TeamIntro'
 import Results from './components/Results'
-import { Final, Lightning } from './components/Rounds'
+import { Final, Lightning, ModeRound } from './components/Rounds'
 import Builder from './components/Builder'
+import { RoundIntro } from './components/Tournament'
+import type { VoteState } from './components/Vote'
 import StudyMaker from './components/StudyMaker'
 import { AudienceScreen, useAudienceWindow } from './components/Audience'
 import { APP_NAME, HOST_EDITION, appName, type Live } from './lib/edition'
@@ -47,10 +50,11 @@ export default function App() {
   const [game, setGameState] = useState<Game | null>(loadGame)
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null)
   const [live, setLive] = useState<Live | null>(null)
+  const [vote, setVote] = useState<VoteState | null>(null)
   const audience = useAudienceWindow(APP_NAME)
   const themeRef = useRef(theme)
   const t = STRINGS[lang]
-  const inGame = screen === 'game' || screen === 'lightning' || screen === 'final'
+  const inGame = screen === 'intro' || screen === 'game' || screen === 'mode' || screen === 'lightning' || screen === 'final' || screen === 'round'
 
   useEffect(() => {
     loadIndex().then(setIndex).catch((e: Error) => setIndexError(e.message))
@@ -100,15 +104,22 @@ export default function App() {
     return startBackground(canvas, () => themeRef.current)
   }, [reduceFx])
 
-  /** After the board, the lightning round, then the final question, then the results (each only if the game has it). */
-  const goNext = (after: 'board' | 'lightning' | 'final') => {
+  /** After the board, the special round, the lightning round, then the final question, then the results (each only if the game has it). */
+  const goNext = (after: 'board' | 'mode' | 'lightning' | 'final') => {
+    // A tournament goes round by round, with a title card before each one.
+    if (game?.tournament) {
+      const k = nextRound(game)
+      if (k === null) return setScreen('results')
+      setGame((g) => enterRound(g, k))
+      return setScreen('round')
+    }
     const nx = game ? nextStage(game, after) : null
     if (nx) {
       setGame((g) => ({ ...g, stage: nx }))
-      setScreen(nx === 'lightning' ? 'lightning' : 'final')
+      setScreen(nx === 'mode' ? 'mode' : nx === 'lightning' ? 'lightning' : 'final')
     } else setScreen('results')
   }
-  const stageScreen = (g: Game): Screen => (g.stage === 'lightning' ? 'lightning' : g.stage === 'final' ? 'final' : 'game')
+  const stageScreen = (g: Game): Screen => (g.intro ? 'intro' : g.tournament?.intro ? 'round' : g.stage === 'mode' ? 'mode' : g.stage === 'lightning' ? 'lightning' : g.stage === 'final' ? 'final' : 'game')
 
   const notify = useCallback((text: string) => setToast({ text, id: Date.now() }), [])
 
@@ -220,11 +231,18 @@ export default function App() {
               custom={custom}
               pools={pools}
               onBack={() => setScreen('home')}
+              onVote={setVote}
               onStart={(g) => {
                 setGame(g)
-                setScreen('game')
+                setScreen(g.intro ? 'intro' : g.tournament ? 'round' : 'game')
               }}
             />
+          )}
+          {screen === 'intro' && game?.intro && (
+            <IntroScreen game={game} setGame={setGame} theme={theme} t={t} lang={lang} onStart={() => {
+              setGame((g) => finishIntro(g))
+              setScreen(game.tournament ? 'round' : 'game')
+            }} />
           )}
           {screen === 'game' && game && (
             <Board
@@ -236,7 +254,20 @@ export default function App() {
               onLive={HOST_EDITION ? setLive : undefined}
             />
           )}
-          {screen === 'lightning' && game && <Lightning t={t} lang={lang} game={game} setGame={setGame} onDone={() => goNext('lightning')} hasFinal={!!nextStage(game, 'lightning')} />}
+          {screen === 'round' && game?.tournament && (
+            <RoundIntro
+              t={t}
+              lang={lang}
+              game={game}
+              onGo={() => {
+                const g = { ...game, tournament: { ...game.tournament!, intro: false } }
+                setGame(g)
+                setScreen(stageScreen(g))
+              }}
+            />
+          )}
+          {screen === 'mode' && game && <ModeRound t={t} lang={lang} game={game} setGame={setGame} onDone={() => goNext('mode')} hasFinal={game.tournament ? nextRound(game) !== null : !!nextStage(game, 'mode')} />}
+          {screen === 'lightning' && game && <Lightning t={t} lang={lang} game={game} setGame={setGame} onDone={() => goNext('lightning')} hasFinal={game.tournament ? nextRound(game) !== null : !!nextStage(game, 'lightning')} />}
           {screen === 'final' && game && <Final t={t} lang={lang} game={game} setGame={setGame} onDone={() => goNext('final')} />}
           {screen === 'results' && game && (
             <Results
@@ -272,7 +303,7 @@ export default function App() {
       {consented && !legalView && guide === 'rules' && <RulesDialog onClose={closeGuide} onTips={() => setGuide('tips')} />}
       {consented && legalView && <LegalViewer which={legalView} lang={lang} onClose={() => setLegalView(null)} />}
       {HOST_EDITION && audience.win && audience.root && (
-        <AudienceScreen win={audience.win} root={audience.root} t={t} lang={lang} theme={theme} reduceFx={reduceFx} screen={screen} game={game} live={screen === 'game' ? live : null} />
+        <AudienceScreen win={audience.win} root={audience.root} t={t} lang={lang} theme={theme} reduceFx={reduceFx} screen={screen} game={game} live={screen === 'game' ? live : null} vote={screen === 'setup' ? vote : null} />
       )}
       {toast && (
         <div className="toast" key={toast.id} role="status" onAnimationEnd={() => setToast(null)}>
@@ -280,5 +311,43 @@ export default function App() {
         </div>
       )}
     </>
+  )
+}
+
+/** The host's introductions screen: moves to the next team by itself unless the host pauses it. */
+function IntroScreen({ game, setGame, theme, t, lang, onStart }: { game: Game; setGame: (u: (g: Game) => Game) => void; theme: ThemeId; t: (typeof STRINGS)['en']; lang: Lang; onStart: () => void }) {
+  const intro = game.intro!
+  const n = game.teams.length
+  const step = (i: number) => setGame((g) => (g.intro ? { ...g, intro: { ...g.intro, i: Math.min(i, n) } } : g))
+  useEffect(() => {
+    if (!intro.auto || intro.i >= n) return
+    const id = setTimeout(() => step(intro.i + 1), INTRO_MS)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intro.i, intro.auto, n])
+  // Each team's introduction gets its daff cue as it appears.
+  useEffect(() => {
+    if (intro.i < n) sfx.teamIntro(intro.i, game.teams[intro.i]?.members?.length ?? 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intro.i, n])
+  return (
+    <main className="intro-screen">
+      <TeamIntro
+        game={game}
+        theme={theme}
+        t={t}
+        lang={lang}
+        host
+        onNext={() => step(intro.i + 1)}
+        onSkip={() => step(n)}
+        onAuto={(auto) => setGame((g) => (g.intro ? { ...g, intro: { ...g.intro, auto } } : g))}
+        onStart={onStart}
+      />
+      {intro.i >= n && (
+        <button className="ghost" style={{ alignSelf: 'center' }} onClick={() => step(0)} data-testid="teams-replay">
+          {t.intro.replay}
+        </button>
+      )}
+    </main>
   )
 }

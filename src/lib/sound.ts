@@ -255,6 +255,10 @@ function start() {
 }
 
 const fx = {
+  /** A team's introduction. Get Grilled's own intro music is not part of this site, so it is silent here. */
+  teamIntro(...args: [team?: number, members?: number]) { void args },
+  /** Nobody got the clue. Get Grilled's own version is made on main; silent here. */
+  nobody() {},
   /** Opening a tile: a quick rising whoosh with a soft tick. */
   open() {
     const c = ready()
@@ -415,6 +419,11 @@ const islamic: typeof fx = {
   applause: withKit(islamicFx.applause),
   lightning: withKit(islamicFx.lightning),
   final: withKit(islamicFx.final),
+  teamIntro: (team = 0, members = 0) => withKit((k) => islamicFx.teamIntro(k, team, members))(),
+  nobody: () => {
+    stopSuspense(0.15)
+    withKit(islamicFx.nobody)()
+  },
 }
 
 export const sfx = ISLAMIC_SET ? islamic : fx

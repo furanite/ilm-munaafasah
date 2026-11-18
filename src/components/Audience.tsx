@@ -6,7 +6,12 @@ import type { Game, Lang, Screen, ThemeId } from '../lib/types'
 import { VALUES } from '../lib/types'
 import type { Strings } from '../lib/i18n'
 import { num } from '../lib/i18n'
-import { FINAL_SECS, FINAL_VALUE, LIGHTNING_SECS, STREAK_AT, clueSeconds, isFinished, lastPlace, standings, tileKey } from '../lib/game'
+import { FINAL_SECS, FINAL_VALUE, LIGHTNING_SECS, MODE_VALUE, STREAK_AT, clueSeconds, cluePoints, cluesOf, isFinished, lastPlace, standings, tileKey, turnTeam } from '../lib/game'
+import { ModeItemView } from './Rounds'
+import { RoundCard } from './Tournament'
+import { VoteBoard, type VoteState } from './Vote'
+import TileIntro from './TileIntro'
+import TeamIntro from './TeamIntro'
 import { ISLAMIC_SET, appName, type Live } from '../lib/edition'
 import { setFavicon } from '../lib/favicon'
 import { Ambient, CatIcon, Flourish, FlourishAbove, Mark } from './Brand'
@@ -18,6 +23,18 @@ import { qLen } from '../lib/qlen'
  * Opens a second browser window that the host drags onto the projector.
  * The window is blank and same-origin, so React draws straight into it: no server and no messages.
  */
+/** While a clue is up on the projector, everything behind it holds still, so the blur behind it isn't redrawn every frame. */
+const stillDocs = new Set<Document>()
+function holdStill(el: HTMLDivElement | null) {
+  if (el) {
+    stillDocs.add(el.ownerDocument)
+    el.ownerDocument.documentElement.classList.add('card-up')
+  } else {
+    stillDocs.forEach((d) => d.documentElement.classList.remove('card-up'))
+    stillDocs.clear()
+  }
+}
+
 export function useAudienceWindow(title: string) {
   const [win, setWin] = useState<Window | null>(null)
   const [root, setRoot] = useState<HTMLElement | null>(null)
@@ -97,10 +114,12 @@ interface Props {
   screen: Screen
   game: Game | null
   live: Live | null
+  /** The category vote, while the host runs it from the setup screen */
+  vote?: VoteState | null
 }
 
 /** What the room sees: the board, the scores, and the clue. The answer appears only after the host reveals it. */
-export function AudienceScreen({ win, root, t, lang, theme, reduceFx, screen, game, live }: Props) {
+export function AudienceScreen({ win, root, t, lang, theme, reduceFx, screen, game, live, vote }: Props) {
   const html = win.document.documentElement
   html.dataset.theme = theme
   setFavicon(win.document, theme)
@@ -110,10 +129,10 @@ export function AudienceScreen({ win, root, t, lang, theme, reduceFx, screen, ga
   html.lang = lang
   html.dir = lang === 'ar' ? 'rtl' : 'ltr'
 
-  return createPortal(<AudienceView t={t} lang={lang} theme={theme} screen={screen} game={game} live={live} win={win} />, root)
+  return createPortal(<AudienceView t={t} lang={lang} theme={theme} screen={screen} game={game} live={live} vote={vote ?? null} win={win} />, root)
 }
 
-function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings; lang: Lang; theme: ThemeId; screen: Screen; game: Game | null; live: Live | null; win: Window }) {
+function AudienceView({ t, lang, theme, screen, game, live, vote, win }: { t: Strings; lang: Lang; theme: ThemeId; screen: Screen; game: Game | null; live: Live | null; vote: VoteState | null; win: Window }) {
   const [helpShown, setHelpShown] = useState(true)
   const helpTimer = useRef<number>()
   useEffect(() => {
@@ -134,6 +153,33 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
       </button>
     </div>
   )
+
+  if (screen === 'intro' && game?.intro) {
+    return (
+      <>
+        <TeamIntro game={game} theme={theme} t={t} lang={lang} host={false} full />
+        {help}
+      </>
+    )
+  }
+
+  if (screen === 'setup' && vote) {
+    return (
+      <main className="aud-main" data-testid="audience">
+        {help}
+        <VoteBoard t={t} lang={lang} vote={vote} big />
+      </main>
+    )
+  }
+
+  if (screen === 'round' && game?.tournament) {
+    return (
+      <main className="aud-main" data-testid="audience">
+        {help}
+        <RoundCard t={t} lang={lang} game={game} big />
+      </main>
+    )
+  }
 
   if (screen === 'results' && game) {
     const rows = standings(game)
@@ -157,12 +203,12 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
     )
   }
 
-  const teamChips = (g: Game, behind: number[] = []) => (
+  const teamChips = (g: Game, behind: number[] = [], turn: number | null = null) => (
     <div className="scores">
       {g.teams.map((tm, i) => {
         const run = g.streaks?.[i] ?? 0
         return (
-          <div className={`team${tm.score < 0 ? ' neg' : ''}${run >= STREAK_AT ? ' fire' : ''}${behind.includes(i) ? ' behind' : ''}`} key={i} data-aud-team={i}>
+          <div className={`team${tm.score < 0 ? ' neg' : ''}${run >= STREAK_AT ? ' fire' : ''}${behind.includes(i) ? ' behind' : ''}${turn === i ? ' turn' : ''}`} key={i} data-aud-team={i}>
             <b>{tm.name}</b>
             <span>{num(tm.score, lang)}</span>
             {run >= STREAK_AT && (
@@ -175,6 +221,42 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
       })}
     </div>
   )
+
+  if (screen === 'mode' && game?.modeRound) {
+    const { mode, items } = game.modeRound
+    const st = game.modeState
+    const item = st && !st.done ? items[st.i] : undefined
+    const n = item && mode === 'clues' ? cluesOf(item).length : 0
+    const shown = st?.revealed ? n : (st?.shown ?? 1)
+    const worth = item ? (mode === 'clues' ? cluePoints(item, shown) : MODE_VALUE) : 0
+    return (
+      <main className="aud-main round" data-testid="audience-mode">
+        {help}
+        <h1 className="round-title">{t.modeNames[mode]}</h1>
+        <section className="stage round-stage">
+          {item ? (
+            <div className="round-card" key={st!.i}>
+              <span className="label">
+                {num(st!.i + 1, lang)} {t.ofTotal} {num(items.length, lang)} · {t.worth} {num(worth, lang)}
+              </span>
+              <ModeItemView t={t} mode={mode} item={item} shown={shown} />
+              {st!.revealed ? (
+                <div className="answer show" dir="auto" data-testid="audience-mode-a">
+                  {item.a}
+                  <Source t={t} q={item} />
+                </div>
+              ) : (
+                <div className="answer aud-hidden" aria-hidden="true" />
+              )}
+            </div>
+          ) : (
+            <p className="round-msg">{st?.done ? t.modeOut : t.modeHelps[mode]}</p>
+          )}
+          {teamChips(game)}
+        </section>
+      </main>
+    )
+  }
 
   if (screen === 'lightning' && game) {
     const st = game.lightningState
@@ -273,6 +355,7 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
 
   const clue = live ? game.clues[live.c]?.[live.l] : null
   const behind = game.settings.comeback && game.used.length > 0 && !isFinished(game) && !live ? lastPlace(game) : []
+  const turn = behind.length || live ? null : turnTeam(game)
   const cat = live ? game.cats[live.c] : null
   return (
     <main className="aud-main" data-testid="audience">
@@ -304,22 +387,27 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
               return (
                 <div key={tileKey(i, l)} className={`tile${used ? ' used static' : ''}${active ? ' aud-active' : ''}`} data-aud-tile={tileKey(i, l)} data-used={used || undefined}>
                   <span className="med" />
-                  <span className="v">{num(v, lang)}</span>
+                  <span className="v">{num(v * (game.mult ?? 1), lang)}</span>
                 </div>
               )
             }),
           )}
         </div>
-        {teamChips(game, behind)}
+        {teamChips(game, behind, turn)}
         {behind.length > 0 && (
           <p className="comeback" data-testid="audience-comeback">
             <span className="pill">{t.comebackLabel}</span> {behind.map((i) => game.teams[i].name).join(' · ')} {t.picksNext}
           </p>
         )}
+        {turn !== null && (
+          <p className="comeback turn-note" data-testid="audience-turn">
+            <span className="pill">{t.turnLabel}</span> {game.teams[turn].name} {t.picksNext}
+          </p>
+        )}
       </section>
       {clue && cat && (
-        <div className="aud-clue" data-testid="audience-clue" key={tileKey(live!.c, live!.l)}>
-          <FitBox className={`aud-card${clue.golden ? ' golden' : ''}${cat.respect ? ' calm' : ''}`} deps={[live!.c, live!.l, live!.revealed, lang]}>
+        <div className="aud-clue" data-testid="audience-clue" key={tileKey(live!.c, live!.l)} ref={holdStill}>
+          <FitBox className={`aud-card${clue.golden ? ' golden' : ''}${cat.respect ? ' calm' : ''}`} deps={[live!.c, live!.l, live!.revealed, live!.intro, lang]}>
             <div className="meta">
               <span className="meta-cat"><CatIcon id={cat.id} />{lang === 'ar' && cat.nameAr ? cat.nameAr : cat.name}</span>
               <span className="row">
@@ -329,25 +417,30 @@ function AudienceView({ t, lang, theme, screen, game, live, win }: { t: Strings;
                 <span className="pill">{num(clue.value, lang)}</span>
               </span>
             </div>
-            {clue.special && <p className={`special-note ${clue.special}`}>{clue.special === 'steal' ? t.stealHelp : t.crowdHelp}</p>}
-            <p className="q" dir="auto" data-len={qLen(lang === 'ar' && clue.qAr ? clue.qAr : clue.q)} data-testid="audience-question">
-              {lang === 'ar' && clue.qAr ? clue.qAr : clue.q}
-            </p>
-            {clue.img && (
-            <div className="q-fig">
-              <img className={`q-img${clue.credit ? ' photo' : ''}`} src={diagramSrc(clue.img)} alt={t.diagramAlt} data-testid="audience-img" />
-              {clue.credit && <p className="q-credit">{clue.credit}</p>}
-            </div>
-          )}
-            {live!.revealed ? (
-              <div className="answer show" dir="auto" data-len={(lang === 'ar' && clue.aAr ? clue.aAr : clue.a).length > 60 ? 'l' : undefined} data-testid="audience-answer">
-                {lang === 'ar' && clue.aAr ? clue.aAr : clue.a}
-                <Source t={t} q={clue} />
-              </div>
+            {live!.intro ? (
+              <TileIntro t={t} clue={clue} big />
             ) : (
-              <div className="answer aud-hidden" aria-hidden="true" />
+              <>
+                <p className="q" dir="auto" data-len={qLen(lang === 'ar' && clue.qAr ? clue.qAr : clue.q)} data-testid="audience-question">
+                  {lang === 'ar' && clue.qAr ? clue.qAr : clue.q}
+                </p>
+                {clue.img && (
+                <div className="q-fig">
+                  <img className={`q-img${clue.credit ? ' photo' : ''}`} src={diagramSrc(clue.img)} alt={t.diagramAlt} data-testid="audience-img" />
+                  {clue.credit && <p className="q-credit">{clue.credit}</p>}
+                </div>
+              )}
+                {live!.revealed ? (
+                  <div className="answer show" dir="auto" data-len={(lang === 'ar' && clue.aAr ? clue.aAr : clue.a).length > 60 ? 'l' : undefined} data-testid="audience-answer">
+                    {lang === 'ar' && clue.aAr ? clue.aAr : clue.a}
+                    <Source t={t} q={clue} />
+                  </div>
+                ) : (
+                  <div className="answer aud-hidden" aria-hidden="true" />
+                )}
+              </>
             )}
-            {clueSeconds(game.settings, live!.l, clue) > 0 && <TimerBar clock={live!.clock ?? null} total={clueSeconds(game.settings, live!.l, clue)} lang={lang} timeUpText={t.timeUp} big />}
+            {!live!.intro && clueSeconds(game.settings, live!.l, clue) > 0 && <TimerBar clock={live!.clock ?? null} total={clueSeconds(game.settings, live!.l, clue)} lang={lang} timeUpText={t.timeUp} big />}
           </FitBox>
         </div>
       )}

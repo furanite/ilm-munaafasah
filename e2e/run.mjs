@@ -28,13 +28,15 @@ async function test(name, fn) {
 function assert(c, msg) { if (!c) throw new Error(msg) }
 
 async function newPage(opts = {}) {
-  const { noConsent, freshTips, ...ctxOpts } = opts
+  const { noConsent, freshTips, keepIntro, ...ctxOpts } = opts
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...ctxOpts })
   // Most tests start as a player who has already accepted the current Terms.
   if (!noConsent) await ctx.addInitScript(() => { if (!localStorage.getItem('gg.consent.v1')) localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.3', date: '2026-11-11T00:00:00Z' })) })
   // The study tips pop-up shows once; most tests start as someone who has already closed it.
   if (!freshTips) await ctx.addInitScript(() => localStorage.setItem('gg.tipsSeen.ilm.v1', 'true'))
   const page = await ctx.newPage()
+  // Golden, Steal and Audience tiles first say what they are; most tests just press Next straight away.
+  if (!keepIntro) await page.addLocatorHandler(page.getByTestId('intro-next'), async (b) => b.click(), { noWaitAfter: true })
   page.requests = []
   page.on('request', (r) => page.requests.push(r.url()))
   page.errors = []
@@ -59,10 +61,15 @@ async function setupGame(page, cats = 6, teams) {
   await classic(page); await page.getByTestId('start').click()
   await page.waitForSelector('.tile')
 }
-async function openTile(page, key) {
+async function openTile(page, key, { keepIntro = false } = {}) {
   await page.click(`[data-tile="${key}"]`)
   await page.waitForSelector('.card.open')
   await page.waitForTimeout(700)
+  // Golden, Steal and Audience tiles say what they are first; Next shows the question.
+  if (!keepIntro && (await page.getByTestId('intro-next').count())) {
+    await page.getByTestId('intro-next').click()
+    await page.waitForTimeout(400)
+  }
 }
 async function scores(page) {
   return page.$$eval('.team span', (els) => els.map((e) => e.textContent))
@@ -418,8 +425,86 @@ try {
     await page.context().close()
   })
 
-  await test('fun extras: steal and audience tiles, streak bonus, comeback, lightning round and final question', async () => {
+  await test('special round: clue by clue borrows items, pays more for fewer clues and survives a reload', async () => {
     const page = await newPage()
+    await page.goto(URL)
+    await page.getByRole('button', { name: /new game/i }).click()
+    await page.waitForSelector('.cat-pick')
+    await page.click('.coll-tabs [data-coll="islamic"]')
+    await page.click('[data-cat="isl-salah"]')
+    await page.selectOption('#golden', '0')
+    await page.selectOption('#steal', '0')
+    await page.selectOption('#crowd', '0')
+    for (const id of ['streak', 'comeback', 'lightning', 'final']) await page.uncheck('#' + id)
+    await page.selectOption('[data-testid="mode-pick"]', 'clues')
+    await page.waitForSelector('[data-testid="mode-borrow"]')
+    await page.getByTestId('start').click()
+    await page.waitForSelector('.tile')
+    const g0 = await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))
+    assert(g0.modeRound.mode === 'clues' && g0.modeRound.items.length === 6, 'six clue-by-clue items')
+    assert(g0.modeRound.items.some((x) => x.from !== 'isl-salah'), 'some items are borrowed from other categories')
+    for (let l = 0; l < 5; l++) {
+      await openTile(page, `0-${l}`)
+      await page.keyboard.press('Digit1')
+      await waitClosed(page)
+    }
+    await page.waitForSelector('[data-testid="mode-round"]', { timeout: 5000 })
+    await page.getByTestId('mode-go').click()
+    await page.waitForSelector('[data-testid="mode-clues"]')
+    assert(await page.locator('.mode-clues li.show').count() === 1, 'one clue at first')
+    await page.getByTestId('mode-more').click()
+    assert(await page.locator('.mode-clues li.show').count() === 2, 'two clues after Next clue')
+    await page.reload()
+    await page.getByRole('button', { name: /resume game/i }).click()
+    await page.waitForSelector('[data-testid="mode-clues"]')
+    assert(await page.locator('.mode-clues li.show').count() === 2, 'clues kept after reload')
+    await page.screenshot({ path: `${SHOTS}/mode-clues.png` })
+    const before = (await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))).teams.map((t) => t.score)
+    const n = g0.modeRound.items[0].q.split(' | ').length
+    await page.keyboard.press('Digit2')
+    await page.waitForTimeout(150)
+    const after = (await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))).teams.map((t) => t.score)
+    assert(after[1] === before[1] + (n - 1) * 100 && after[0] === before[0], `clue points: ${before} -> ${after} with ${n} clues`)
+    await page.getByTestId('mode-reveal').click()
+    await page.waitForSelector('[data-testid="mode-a"].show')
+    while (await page.getByTestId('mode-next').count()) await page.getByTestId('mode-next').click()
+    await page.getByTestId('mode-done').click()
+    await page.waitForSelector('[data-testid="winner"]')
+    assert(page.errors.length === 0, 'console errors: ' + page.errors.join(' | '))
+    await page.context().close()
+  })
+
+  await test('special rounds: true or false, odd one out and the picture round show their items', async () => {
+    for (const [cat, mode, sel] of [['isl-money', 'tf', '[data-testid="mode-q"]'], ['isl-salah', 'odd', '[data-testid="mode-odd"] .chip'], ['isl-architecture', 'picture', '[data-testid="mode-img"]']]) {
+      const page = await newPage()
+      await page.goto(URL)
+      await page.getByRole('button', { name: /new game/i }).click()
+      await page.waitForSelector('.cat-pick')
+      await page.click('.coll-tabs [data-coll="islamic"]')
+      await page.click(`[data-cat="${cat}"]`)
+      await page.selectOption('[data-testid="mode-pick"]', mode)
+      await page.getByTestId('start').click()
+      await page.waitForSelector('.tile')
+      await page.evaluate(() => {
+        const g = JSON.parse(localStorage.getItem('gg.game.v1'))
+        g.used = g.clues.flatMap((col, c) => col.map((_, l) => `${c}-${l}`))
+        g.stage = 'mode'
+        localStorage.setItem('gg.game.v1', JSON.stringify(g))
+      })
+      await page.reload()
+      await page.getByRole('button', { name: /resume game/i }).click()
+      await page.getByTestId('mode-go').click()
+      await page.waitForSelector(sel)
+      if (mode === 'picture') await page.waitForFunction(() => document.querySelector('[data-testid="mode-img"]')?.naturalWidth > 0)
+      if (mode === 'tf') assert(/(True or false|Halal or not|Legal or not)\?/.test(await page.textContent('.mode-ask')), 'tf asks for a verdict')
+      await page.screenshot({ path: `${SHOTS}/mode-${mode}.png` })
+      assert(page.errors.length === 0, 'console errors: ' + page.errors.join(' | '))
+      await page.context().close()
+    }
+  })
+
+  await test('fun extras: steal and audience tiles, streak bonus, comeback, lightning round and final question', async () => {
+    const page = await newPage({ keepIntro: true })
     await page.goto(URL)
     await page.getByRole('button', { name: /new game/i }).click()
     await page.waitForSelector('.cat-pick')
@@ -449,8 +534,15 @@ try {
     let stole = false
     for (const [c, l] of [[1, 0], [0, 1]]) {
       const clue = g0.clues[c][l]
-      await openTile(page, `${c}-${l}`)
-      if (clue.special) assert(await page.getByTestId('special-note').isVisible(), 'special tile explains itself')
+      await openTile(page, `${c}-${l}`, { keepIntro: true })
+      if (clue.special || clue.golden) {
+        // The tile says what it is; no question and no timer until Next
+        assert(await page.getByTestId('tile-intro').isVisible(), `special tile explains itself (${clue.special} ${clue.golden}) ` + (await page.textContent('[data-testid="clue"]')).slice(0, 200))
+        assert(!(await page.getByTestId('question').count()) && !(await page.getByTestId('timer').count()), 'question waits for Next')
+        await page.keyboard.press('Enter')
+        await page.waitForSelector('[data-testid="question"]')
+        await page.waitForTimeout(400)
+      }
       await page.keyboard.press('Digit2')
       expectBeta += clue.value
       if (clue.special === 'steal') {
@@ -1061,6 +1153,145 @@ try {
     await page.getByTestId('end').click()
     await page.getByTestId('end-confirm').click()
     await page.waitForSelector('[data-testid="winner"]')
+    await page.context().close()
+  })
+
+  await test('tournament: rounds of different kinds, title cards between them, scores carried over, survives a reload', async () => {
+    const page = await newPage()
+    await page.goto(URL)
+    await page.getByRole('button', { name: /new game/i }).click()
+    await page.waitForSelector('.cat-pick')
+    for (const id of ['code', 'circuits', 'flags']) await page.click(`[data-cat="${id}"]`)
+    await page.fill('#team-0', 'Falcons'); await page.fill('#team-1', 'Hawks')
+    await page.getByTestId('type-tour').click()
+    const plan = page.getByTestId('plan')
+    assert(await plan.locator('li').count() === 6, 'full plan should have 6 rounds')
+    await page.selectOption('#tour-plan', 'short')
+    assert(await plan.locator('li').count() === 4, 'short plan should have 4 rounds')
+    // Make it our own: add a double-points board before the final.
+    await page.getByTestId('plan-add').click()
+    assert(await page.locator('#tour-plan').inputValue() === 'custom', 'editing the plan should switch to custom')
+    assert(await plan.locator('li').count() === 5, 'add round failed')
+    await page.selectOption('[data-plan-pick="3"]', 'double')
+    assert(await page.locator('#lightning').count() === 0, 'tournament hides the single-game closing rounds')
+    await page.screenshot({ path: `${SHOTS}/tournament-setup.png`, fullPage: true })
+    await page.getByTestId('start').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    const title = async () => (await page.textContent('[data-testid="round-title"]')).trim()
+    assert(await title() === 'Board round', 'first round should be the board: ' + await title())
+    assert((await page.textContent('.round-count')).includes('Round 1 of 5'), 'round count missing')
+    await page.waitForTimeout(900)
+    await page.screenshot({ path: `${SHOTS}/tournament-round-card.png` })
+    await page.getByTestId('round-start').click()
+    await page.waitForSelector('.tile')
+    assert((await page.textContent('[data-testid="round-pill"]')).includes('1/5'), 'round pill missing')
+    await openTile(page, '0-0'); await page.keyboard.press('Digit1'); await waitClosed(page)
+    assert(await page.textContent('[data-testid="end"]') === 'End round', 'end button should end the round')
+    await page.getByTestId('end').click(); await page.getByTestId('end-confirm').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    assert(await title() === 'Picture round', 'round 2 should be the picture round: ' + await title())
+    assert((await page.textContent('.round-standings')).includes('Falcons'), 'standings missing')
+    // A reload lands back on the same title card.
+    await page.reload()
+    await page.getByRole('button', { name: /resume game/i }).click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    assert(await title() === 'Picture round', 'reload lost the round')
+    await page.getByTestId('round-start').click()
+    await page.getByTestId('mode-skip').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    assert(await title() === 'Lightning round', 'round 3 should be lightning: ' + await title())
+    await page.getByTestId('round-start').click()
+    await page.getByTestId('lightning-skip').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    assert(await title() === 'Double-points board', 'round 4 should be the double board: ' + await title())
+    await page.getByTestId('round-start').click()
+    await page.waitForSelector('.tile')
+    const values = await page.$$eval('[data-tile^="0-"] .v', (els) => els.map((e) => e.textContent))
+    assert(values.join() === '200,400,600,800,1000', 'double board values: ' + values)
+    const before = await scores(page)
+    assert(before[0] === '100', 'score not carried over: ' + before)
+    await openTile(page, '0-1'); await page.keyboard.press('Digit2'); await waitClosed(page)
+    const after = await scores(page)
+    const state = await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))
+    assert(+after[1] === state.clues[0][1].value && state.clues[0][1].value >= 400, 'double points not paid: ' + after)
+    await page.getByTestId('end').click(); await page.getByTestId('end-confirm').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    assert(await title() === 'Final question', 'last round should be the final')
+    await page.getByTestId('round-start').click()
+    await page.waitForSelector('[data-testid="final"]', { timeout: 4000 })
+    assert(await page.textContent('[data-testid="end"]').catch(() => null) === null, 'final should not show the board')
+    await page.evaluate(() => {
+      const g = JSON.parse(localStorage.getItem('gg.game.v1'))
+      g.finalState = { step: 'answer', marks: g.teams.map(() => null) }
+      localStorage.setItem('gg.game.v1', JSON.stringify(g))
+    })
+    await page.reload()
+    await page.getByRole('button', { name: /resume game/i }).click()
+    await page.getByTestId('final-done').click()
+    await page.waitForSelector('[data-testid="winner"]')
+    assert(page.errors.length === 0, 'page errors: ' + page.errors.join(' | '))
+    await page.context().close()
+  })
+
+  await test('category vote: each team picks one, then the audience and the host, and the board uses those', async () => {
+    const page = await newPage()
+    await page.goto(URL)
+    await page.getByRole('button', { name: /new game/i }).click()
+    await page.waitForSelector('.cat-pick')
+    await page.check('#vote')
+    const ids = ['code', 'circuits', 'flags', 'space', 'animals', 'food', 'sports']
+    await page.click(`[data-cat="${ids[0]}"]`)
+    await classic(page); await page.getByTestId('start').click()
+    assert((await page.textContent('[role="alert"]')).includes('5'), 'should ask for a shortlist of 5 (3 teams + 2)')
+    for (const id of ids.slice(1)) await page.click(`[data-cat="${id}"]`)
+    await page.getByTestId('start').click()
+    await page.waitForSelector('[data-testid="vote"]')
+    assert((await page.textContent('[data-testid="vote-turn"]')).includes('Team 1'), 'Team 1 should vote first')
+    await page.click('[data-vote-cat="space"]')
+    assert(await page.locator('[data-vote-cat="space"]').isDisabled(), 'a chosen category cannot be chosen again')
+    await page.click('[data-vote-cat="food"]')
+    await page.getByTestId('vote-undo').click()
+    assert((await page.textContent('[data-testid="vote-turn"]')).includes('Team 2'), 'undo should give the turn back')
+    await page.click('[data-vote-cat="code"]')
+    await page.click('[data-vote-cat="animals"]')
+    assert((await page.textContent('[data-testid="vote-turn"]')).includes('The audience'), 'audience should pick fourth')
+    await page.waitForTimeout(600)
+    await page.screenshot({ path: `${SHOTS}/vote.png` })
+    await page.getByTestId('vote-random').click()
+    assert((await page.textContent('[data-testid="vote-turn"]')).includes('The host'), 'host should pick last')
+    const hostPick = await page.locator('.vote-grid .cat-pick:not([disabled])').first().getAttribute('data-vote-cat')
+    await page.click(`[data-vote-cat="${hostPick}"]`)
+    assert((await page.textContent('[data-testid="vote-turn"]')).includes('Every vote is in'), 'vote should be over')
+    await page.getByTestId('vote-start').click()
+    await page.waitForSelector('.tile')
+    const state = await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))
+    const got = state.cats.map((c) => c.id)
+    assert(got.length === 5 && got[0] === 'space' && got[1] === 'code' && got[2] === 'animals' && got[4] === hostPick, 'board categories: ' + got)
+    assert(['circuits', 'flags', 'food', 'sports'].includes(got[3]) && got[3] !== hostPick, 'audience pick should come from what was left: ' + got[3])
+    assert(page.errors.length === 0, 'page errors: ' + page.errors.join(' | '))
+    await page.context().close()
+  })
+
+  await test('category vote and tournament together: the voted categories feed every board', async () => {
+    const page = await newPage()
+    await page.goto(URL)
+    await page.getByRole('button', { name: /new game/i }).click()
+    await page.waitForSelector('.cat-pick')
+    await page.check('#vote')
+    for (const id of ['code', 'circuits', 'flags', 'space', 'food']) await page.click(`[data-cat="${id}"]`)
+    await page.getByTestId('type-tour').click()
+    await page.getByTestId('start').click()
+    await page.waitForSelector('[data-testid="vote"]')
+    const n = await page.locator('[data-voter]').count()
+    for (let i = 0; i < n; i++) await page.locator('.vote-grid .cat-pick:not([disabled])').first().click()
+    await page.getByTestId('vote-start').click()
+    await page.waitForSelector('[data-testid="round-card"]')
+    const state = await page.evaluate(() => JSON.parse(localStorage.getItem('gg.game.v1')))
+    const boards = state.tournament.rounds.filter((r) => r.cats)
+    assert(boards.length === 2, 'full plan has two boards')
+    assert(boards.every((b) => b.cats.length === n), 'every board should use the voted categories')
+    const q1 = new Set(boards[0].clues.flat().map((q) => q.id))
+    assert(!boards[1].clues.flat().some((q) => q1.has(q.id)), 'the second board repeats questions')
     await page.context().close()
   })
 

@@ -44,12 +44,44 @@ export interface Category {
   /** The study file this category came from (one subcategory of it), shown as a group in setup */
   set?: { id: string; title: string }
   levels: Question[][]
+  /** Extra items for the special rounds (built-in categories only) */
+  modes?: Partial<Record<ItemMode, ModeItem[]>>
 }
 
 export type PackGroup =
   | 'engineering' | 'cces' | 'general'
   | 'quran' | 'hadith' | 'aqidah' | 'fiqh' | 'prophets' | 'arabic' | 'tazkiyah' | 'islamichistory' | 'nasheed'
   | 'kids'
+
+/** Special rounds the host can add after the board. "picture" uses the picture questions of the categories. */
+export const ROUND_MODES = ['picture', 'tf', 'case', 'translate', 'clues', 'odd'] as const
+export type RoundMode = (typeof ROUND_MODES)[number]
+/** The modes that have their own sections in pack files. */
+export type ItemMode = Exclude<RoundMode, 'picture'>
+
+/** One item of a special round. For true-or-false, v is 1 (true, halal, legal) or 0, and k says which words to use. */
+export interface ModeItem {
+  id?: string
+  q: string
+  a: string
+  img?: string
+  v?: 0 | 1
+  k?: 'true' | 'halal' | 'legal'
+  /** Source tag (religious categories): historical with its source, dramatised or fictional */
+  kind?: 'H' | 'D' | 'F'
+  src?: string
+  /** The category it came from (name shown with the item, and its id) */
+  cat?: string
+  from?: string
+}
+
+export interface ModeRoundState {
+  i: number
+  revealed: boolean
+  /** Clue-by-clue: how many clues are showing */
+  shown: number
+  done?: boolean
+}
 
 export interface CategorySummary {
   id: string
@@ -58,6 +90,10 @@ export interface CategorySummary {
   group?: PackGroup
   builtIn: boolean
   counts: number[]
+  /** How many items the category has for each special round */
+  modes?: Partial<Record<ItemMode, number>>
+  /** How many picture questions it has */
+  pics?: number
 }
 
 /** Special tiles: Steal moves the points from another team; Audience lets someone in the room answer for the team. */
@@ -69,9 +105,27 @@ export interface Clue extends Question {
   special?: Special
 }
 
+/** One person on a team, for the team introductions. */
+export interface Member {
+  name: string
+  /** A short line under the name: their major, title or role (optional) */
+  role?: string
+}
+
 export interface Team {
   name: string
   score: number
+  /** Team introductions (optional): members, which member is captain, and a fun fact */
+  members?: Member[]
+  captain?: number
+  fact?: string
+}
+
+/** Where the team introductions are: showing team i, or (i === teams.length) the Meet the teams screen. */
+export interface IntroState {
+  i: number
+  /** Move on to the next team by itself after a few seconds */
+  auto: boolean
 }
 
 export interface GameSettings {
@@ -87,6 +141,8 @@ export interface GameSettings {
   comeback?: boolean
   lightning?: boolean
   final?: boolean
+  /** A special round after the board */
+  mode?: RoundMode
 }
 
 /** Counts of special tiles the host asked for (used only when the game is made). */
@@ -97,7 +153,7 @@ export interface TileCounts {
 }
 
 /** Where a game is: on the board, in the 60-second lightning round, or at the final question. */
-export type Stage = 'board' | 'lightning' | 'final'
+export type Stage = 'board' | 'mode' | 'lightning' | 'final'
 
 export interface LightningState {
   /** Index of the question on screen */
@@ -126,6 +182,8 @@ export interface Game {
   startedAt: number
   /** When the whole-game clock runs out (epoch ms), if the host set a game length */
   endsAt?: number
+  /** Whose turn it is to pick a tile: a random team starts, then each team in turn */
+  turn?: number
   /** Right answers in a row, per team (streak bonus) */
   streaks?: number[]
   stage?: Stage
@@ -135,8 +193,45 @@ export interface Game {
   /** The final question and the category it comes from */
   final?: { cat: { id: string; name: string; nameAr?: string }; q: Question }
   finalState?: FinalState
+  /** The special round's items and where it is */
+  modeRound?: { mode: RoundMode; items: ModeItem[] }
+  modeState?: ModeRoundState
   /** The themed night this game was set up from, if any */
   night?: string
+  /** Team introductions before the board; removed when the host starts the game */
+  intro?: IntroState
+  /** Points multiplier for the board on screen (2 in a double-points tournament round) */
+  mult?: number
+  /** A tournament: several rounds of different kinds, with scores carried from one to the next */
+  tournament?: Tournament
+}
+
+/** Kinds of tournament round: a board, a board at double points, a special round, the lightning round, the final question. */
+export const TOUR_KINDS = ['board', 'double', 'mode', 'lightning', 'final'] as const
+export type TourKind = (typeof TOUR_KINDS)[number]
+
+/** One round of a tournament plan, as the host sets it up. */
+export interface TourStep {
+  kind: TourKind
+  /** Which special round, for kind "mode" */
+  mode?: RoundMode
+}
+
+/** One round of a tournament in play, with what it was drawn with when the game was made. */
+export interface TourRound extends TourStep {
+  /** Board rounds: the categories and the clues */
+  cats?: { id: string; name: string; nameAr?: string }[]
+  clues?: Clue[][]
+  /** Special rounds: the items */
+  items?: ModeItem[]
+}
+
+export interface Tournament {
+  rounds: TourRound[]
+  /** The round being played */
+  at: number
+  /** True while the round's title card is showing, before the host starts it */
+  intro: boolean
 }
 
 /** Themes that exist only on the Islamic site (Munaafasatul Ilm). */
@@ -146,4 +241,4 @@ export type IslamicOnlyTheme = 'rawdah' | 'jumuah' | 'mawlid' | PrayerTheme | Cu
 export type BaseThemeId = Exclude<ThemeId, IslamicOnlyTheme>
 export type ThemeId = 'amethyst' | 'emerald' | 'neon' | 'onyx' | 'rivals' | 'ember' | 'heritage' | IslamicOnlyTheme
 export type Lang = 'en' | 'ar'
-export type Screen = 'home' | 'setup' | 'game' | 'lightning' | 'final' | 'results' | 'builder' | 'review' | 'study'
+export type Screen = 'home' | 'setup' | 'intro' | 'game' | 'mode' | 'lightning' | 'final' | 'results' | 'builder' | 'round' | 'review' | 'study'

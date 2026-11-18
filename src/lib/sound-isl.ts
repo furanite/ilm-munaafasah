@@ -402,6 +402,24 @@ export const BIRDS: Record<BirdId, { name: string; call: (k: Kit, t: number, g?:
 /* ---------- The game's sounds ---------- */
 
 export const islamicFx = {
+  /**
+   * One team's introduction (about 5 seconds), timed to the animation in src/intro.css: a gust and a daff roll as the
+   * team appears, dum-tak-tak-DUM under the name, a rim stroke for each member, then a bird for the fun fact.
+   * Each team sits at its own drum pitch and side of the room, so the teams sound different. Daff, breeze and birds only.
+   */
+  teamIntro(k: Kit, team = 0, members = 0) {
+    const tune = [1, 1.12, 0.9, 1.25][team % 4]
+    const pan = [-0.2, 0.2, -0.1, 0.1][team % 4]
+    whoosh(k, 0, 0.9, 0.14)
+    roll(k, 0.1, 0.6, 0.03, 0.12, 18, pan)
+    dum(k, 0.75, 0.42, pan, tune)
+    tak(k, 0.95, 0.2, pan)
+    tak(k, 1.05, 0.16, pan)
+    dum(k, 1.2, 0.46, pan, tune)
+    for (let i = 0; i < Math.min(members, 6); i++) tak(k, 2 + i * 0.28, 0.14, (i % 2 ? 0.3 : -0.3))
+    const bird = [bulbul, sparrow, sunbird, bulbul][team % 4]
+    bird(k, 3.5, team % 4 === 2 ? 0.04 : 0.055, -pan)
+  },
   /** Opening a tile: a gust of breeze, a rim stroke and a sparrow. */
   open(k: Kit) {
     whoosh(k, 0, 0.55, 0.18)
@@ -428,6 +446,31 @@ export const islamicFx = {
     circle(k, 0.3, 'D', 0.55)
     bulbul(k, 0.45, 0.06, -0.3)
     sparrow(k, 0.95, 0.035, 0.4)
+  },
+  /** Nobody got it, option A ("Falling strokes"): three soft, damped strokes stepping down, then a robin's falling call. */
+  nobodyA(k: Kit) {
+    dum(k, 0, 0.34, -0.2, 1.0, true)
+    dum(k, 0.28, 0.3, 0, 0.84, true)
+    dum(k, 0.56, 0.32, 0.2, 0.7, true)
+    robin(k, 0.95, 0.03)
+  },
+  /** Nobody got it, option B ("Passing breeze"): a sigh of wind that falls away, one muffled stroke and a lone sparrow far off. */
+  nobodyB(k: Kit) {
+    whoosh(k, 0, 1.1, 0.12, 1500, 300)
+    dum(k, 0.45, 0.34, 0, 0.78, true)
+    sparrow(k, 1.2, 0.022, 0.6)
+  },
+  /** Nobody got it, option C ("Quiet taps"): light rim taps that slow down and settle on a soft low stroke. */
+  nobodyC(k: Kit) {
+    tak(k, 0, 0.18, -0.3)
+    tak(k, 0.14, 0.15, 0.3)
+    ka(k, 0.32, 0.14)
+    tak(k, 0.56, 0.12)
+    dum(k, 0.86, 0.3, 0, 0.75, true)
+  },
+  /** Nobody got it: option B, the owner's pick (2026-11-18). */
+  nobody(k: Kit) {
+    islamicFx.nobodyB(k)
   },
   /** Wrong answer: two damped, falling strokes. Gentle, but clear. */
   wrong(k: Kit) {
