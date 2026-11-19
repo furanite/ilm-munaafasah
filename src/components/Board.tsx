@@ -387,12 +387,31 @@ function ClueCard({ t, lang, game, open, onJudge, onSteal, onClose, onState, tim
       Object.assign(card.style, { top: (innerHeight - H) / 2 + 'px', height: H + 'px' })
     }
     const ids = [setTimeout(fit, 720), setTimeout(fit, 1400)]
-    addEventListener('resize', fit)
-    return () => {
-      ids.forEach(clearTimeout)
-      removeEventListener('resize', fit)
-    }
+    // Resizes are handled by refit below.
+    return () => ids.forEach(clearTimeout)
   }, [revealed, stealer, wrong.length])
+
+  // A tablet turned round (or a window resized) while the card is open: fit the card to the new screen,
+  // so it and its buttons don't end up off the edge.
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
+  useEffect(() => {
+    const refit = () => {
+      const card = ref.current
+      if (!card || phaseRef.current === 'closing') return
+      const W = Math.min(clue.img ? 960 : 820, innerWidth - 24)
+      const H = Math.min(clue.img ? 760 : 560, innerHeight - 32)
+      Object.assign(card.style, { left: (innerWidth - W) / 2 + 'px', top: (innerHeight - H) / 2 + 'px', width: W + 'px', height: H + 'px' })
+      // Then grow it again for a long clue, answer or source, as when it opened.
+      const inner = card.firstElementChild as HTMLElement | null
+      if (inner && inner.scrollHeight > H + 1) {
+        const tall = Math.min(inner.scrollHeight, innerHeight - 16)
+        Object.assign(card.style, { top: (innerHeight - tall) / 2 + 'px', height: tall + 'px' })
+      }
+    }
+    addEventListener('resize', refit)
+    return () => removeEventListener('resize', refit)
+  }, [clue.img])
 
   // The countdown starts once the question is on show: after the card opens, or after Next on a special tile.
   const introAtOpen = useRef(intro)

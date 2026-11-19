@@ -8,7 +8,11 @@ const PORT = 4179
 const URL = `http://localhost:${PORT}/`
 const SHOTS = process.env.SHOTS || 'e2e/shots'
 mkdirSync(SHOTS, { recursive: true })
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
+// A server left over from an earlier run would answer instead of this build (and this one would fail to
+// start on the taken port), so the tests would quietly check old code: refuse to run then.
+if (await fetch(`http://localhost:${PORT}/`).then(() => true, () => false)) throw new Error(`Port ${PORT} is already in use (an old preview server?). Stop it and run again.`)
+// vite is started with node itself (not through npx), so server.kill() really stops it at the end.
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
 await new Promise((r) => setTimeout(r, 2500))
 
 const results = []
@@ -31,7 +35,7 @@ async function newPage(opts = {}) {
   const { noConsent, freshTips, keepIntro, ...ctxOpts } = opts
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, ...ctxOpts })
   // Most tests start as a player who has already accepted the current Terms.
-  if (!noConsent) await ctx.addInitScript(() => { if (!localStorage.getItem('gg.consent.v1')) localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.3', date: '2026-11-11T00:00:00Z' })) })
+  if (!noConsent) await ctx.addInitScript(() => { if (!localStorage.getItem('gg.consent.v1')) localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.4', date: '2026-11-11T00:00:00Z' })) })
   // The study tips pop-up shows once; most tests start as someone who has already closed it.
   if (!freshTips) await ctx.addInitScript(() => localStorage.setItem('gg.tipsSeen.ilm.v1', 'true'))
   const page = await ctx.newPage()
@@ -1433,7 +1437,7 @@ try {
     await page.getByTestId('consent-accept').click()
     await dlg.waitFor({ state: 'detached' })
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gg.consent.v1')))
-    assert(saved.version === '1.3' && !isNaN(Date.parse(saved.date)), 'consent not saved with version and date')
+    assert(saved.version === '1.4' && !isNaN(Date.parse(saved.date)), 'consent not saved with version and date')
     assert(await page.locator('.app[inert]').count() === 0, 'app still blocked after accepting')
     await page.reload()
     await page.waitForSelector('.logo-title')

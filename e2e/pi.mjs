@@ -36,7 +36,7 @@ function assert(c, msg) {
 const browser = await chromium.launch()
 async function newPage(viewport = { width: 1280, height: 800 }) {
   const ctx = await browser.newContext({ viewport })
-  await ctx.addInitScript(() => localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.3', date: '2026-11-11T00:00:00Z' })))
+  await ctx.addInitScript(() => localStorage.setItem('gg.consent.v1', JSON.stringify({ version: '1.4', date: '2026-11-11T00:00:00Z' })))
   await ctx.addInitScript(() => localStorage.setItem('gg.tipsSeen.ilm.v1', 'true'))
   const page = await ctx.newPage()
   await page.addLocatorHandler(page.getByTestId('intro-next'), async (b) => b.click(), { noWaitAfter: true })
@@ -235,6 +235,8 @@ try {
     const phones = []
     for (let i = 0; i < 3; i++) {
       const ph = await newPage({ width: 390, height: 844 })
+      // The third phone's clock is two hours ahead of the Pi's (a Pi on an offline router often is behind): its countdown must still follow the Pi.
+      if (i === 2) await ph.clock.install({ time: Date.now() + 2 * 3600_000 })
       await ph.goto(URL + '?a=1')
       await ph.waitForSelector('[data-testid="phone-wait"]')
       phones.push(ph)
