@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Lang } from '../lib/types'
+import { dirOf } from '../lib/lang'
 
 /**
  * Scholar review: lets 'ulama check every line of the Islamic and Kids collections for correctness
@@ -30,7 +31,7 @@ function save(s: Saved) {
   try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* storage full or blocked: the download still works */ }
 }
 
-const TEXT = {
+const TEXT_BASE = {
   en: {
     title: 'Scholar review',
     intro: "For 'ulama and qualified teachers: check each question and its answer for correctness (creed, fiqh, hadith grading, facts and sources) and for adab (respect for Allah, the Blessed Prophets (عليهم السلام), our Beloved Prophet ﷺ, the Companions (رِضْوَانُ اللَّهِ عَلَيْهِم) and the scholars).",
@@ -98,6 +99,44 @@ const TEXT = {
     imported: (n: number) => `حُمّلت ${n} مراجعة.`,
     bad: 'هذا ليس ملف مراجعة.',
     big: 'هذا الملف أكبر من أن يكون ملف مراجعة (أكثر من ٢ ميغابايت).',
+  },
+}
+const TEXT = {
+  ...TEXT_BASE,
+  ur: {
+    ...TEXT_BASE.en,
+    title: 'علماء کا جائزہ',
+    intro: 'علماء اور مستند اساتذہ کے لیے: ہر سوال اور اس کے جواب کو درستی (عقیدہ، فقہ، حدیث کا درجہ، حقائق اور حوالے) اور ادب (اللہ تعالیٰ، انبیاءِ کرام ﵈، ہمارے حبیب اور ہمارے آقا نبیِ کریم محمد ﷺ، صحابۂ کرام (رِضْوَانُ اللَّهِ عَلَيْهِم) اور علماء کا احترام) کے لحاظ سے جانچیں۔',
+    how: 'آپ کے جوابات صرف اسی براؤزر میں رہتے ہیں۔ مکمل ہونے پر اپنا جائزہ ڈاؤن لوڈ کر کے فائل ایپ کے مالک کو بھیجیں۔ جس سطر پر آپ نشان لگائیں وہ درست ہونے تک کھیل سے نکال دی جاتی ہے۔',
+    public: 'براہِ کرم نوٹ کریں: مالک کے آپ کی فائل شامل کرنے کے بعد یہاں درج آپ کا نام اور لقب، فیصلے اور نوٹس اس عوامی جائزے کے صفحے پر ہر سوال کے ساتھ دکھائے جاتے ہیں۔ صرف وہی نام لکھیں جس کے دکھائے جانے پر آپ راضی ہوں، اور نوٹس میں کسی کی ذاتی تفصیل نہ لکھیں۔',
+    name: 'آپ کا نام اور لقب',
+    namePh: 'مثلاً شیخ احمد، استادِ فقہ',
+    category: 'زمرہ',
+    show: 'دکھائیں',
+    all: 'سب', todo: 'ابھی جائزہ نہیں ہوا', mine: 'میرے نشان زدہ', held: 'روکے گئے (تصدیق طلب)',
+    level: 'درجہ',
+    answer: 'جواب',
+    source: 'حوالہ',
+    kinds: { H: 'تاریخی / حوالہ شدہ', D: 'ڈرامائی انداز', F: 'فرضی یا مثال کے طور پر' } as Record<string, string>,
+    heldU: 'روکا گیا: مرتب کو اس پر یقین نہیں تھا۔ براہِ کرم تصدیق کریں۔',
+    heldF: 'روکا گیا: کسی جائزہ کار نے نشان لگایا۔',
+    correctness: 'درستی', adab: 'ادب',
+    ok: 'درست', okA: 'مناسب', issue: 'مسئلہ',
+    note: 'کیا غلط ہے، اور اس کی دلیل یا حوالہ',
+    fix: 'تجویز کردہ درستی (اختیاری)',
+    others: 'پچھلے جائزے',
+    progress: (d: number, n: number) => `اس زمرے میں ${n} میں سے ${d} کا جائزہ ہو گیا`,
+    total: (d: number) => `کل ${d} کا جائزہ ہو گیا`,
+    download: 'میرا جائزہ ڈاؤن لوڈ کریں',
+    importF: 'جائزے کی فائل کھولیں',
+    needName: 'پہلے اپنا نام درج کریں، تاکہ مالک کو معلوم ہو کہ جائزہ کس نے لیا۔',
+    back: 'واپس',
+    loading: 'لوڈ ہو رہا ہے…',
+    none: 'اس فلٹر کے ساتھ دکھانے کو کچھ نہیں۔',
+    clear: 'صاف کریں',
+    imported: (n: number) => `${n} فیصلے کھل گئے۔`,
+    bad: 'یہ جائزے کی فائل نہیں۔',
+    big: 'یہ فائل جائزے کی فائل ہونے کے لیے بہت بڑی ہے (2 MB سے زیادہ)۔',
   },
 }
 
@@ -178,7 +217,7 @@ export default function Review({ lang, notify, onBack }: { lang: Lang; notify: (
   }
 
   return (
-    <main className="review stack" dir={lang === 'ar' ? 'rtl' : 'ltr'} data-testid="review">
+    <main className="review stack" dir={dirOf(lang)} data-testid="review">
       <section className="panel stack">
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <h1 className="review-title">{t.title}</h1>
@@ -238,7 +277,7 @@ export default function Review({ lang, notify, onBack }: { lang: Lang; notify: (
                 {x.held && <p className="review-held">{x.held === 'unchecked' ? t.heldU : t.heldF}</p>}
                 <p className="review-q" dir="auto" lang="en">{x.q}</p>
                 <p className="review-a" dir="auto" lang="en"><b>{t.answer}:</b> {x.a}</p>
-                {x.src && <p className="review-src" dir="auto" lang="en"><b>{t.source}:</b> {x.src}</p>}
+                {x.src && <p className="review-src" dir="auto" lang="en"><b>{t.source}:</b> <bdi>{x.src}</bdi></p>}
                 {x.reviews && x.reviews.length > 0 && (
                   <details className="review-past">
                     <summary>{t.others} ({x.reviews.length})</summary>

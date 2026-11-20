@@ -1,6 +1,7 @@
 import type { Lang } from './types'
 import { APP_NAME as APP, APP_NAME_AR as APPA } from './edition'
 import photos from '../../questions/img/credits-full.json'
+import { consentUr, privacyUr, termsUr } from './legal-ur'
 
 /**
  * Owner details shown in the Terms, the Privacy Notice and the footer.
@@ -11,6 +12,7 @@ export const LEGAL = {
   ownerAr: 'Moinuddeen',
   effective: '19 November 2026',
   effectiveAr: '19 نوفمبر 2026',
+  effectiveUr: '19 نومبر 2026',
   year: 2026,
   /** Change this whenever the Terms or Privacy Notice change: everyone is asked to accept again. */
   termsVersion: '1.5',
@@ -155,10 +157,10 @@ const privacyAr: LegalDoc = {
   ],
 }
 
-export const TERMS: Record<Lang, LegalDoc> = { en: termsEn, ar: termsAr }
-export const PRIVACY: Record<Lang, LegalDoc> = { en: privacyEn, ar: privacyAr }
+export const TERMS: Record<Lang, LegalDoc> = { en: termsEn, ar: termsAr, ur: termsUr(LEGAL.owner, LEGAL.termsVersion, LEGAL.effectiveUr, LEGAL.year, photoLines) }
+export const PRIVACY: Record<Lang, LegalDoc> = { en: privacyEn, ar: privacyAr, ur: privacyUr(LEGAL.termsVersion, LEGAL.effectiveUr) }
 
-export const CONSENT_TEXT = {
+const CONSENT_BASE = {
   en: {
     title: `Welcome to ${APP}`,
     intro: 'Before you play, please read and accept our Terms.',
@@ -214,3 +216,4 @@ export const CONSENT_TEXT = {
     reduceFx: 'تخفيف المؤثرات',
   },
 }
+export const CONSENT_TEXT: Record<Lang, (typeof CONSENT_BASE)['en']> = { ...CONSENT_BASE, ur: consentUr }

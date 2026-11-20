@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Lang } from '../lib/types'
 import { useDialog } from './Legal'
+import { dirOf } from '../lib/lang'
 
 /**
  * "Host version" button for the one-screen edition. Every click explains how the two versions differ,
@@ -12,7 +13,7 @@ import { useDialog } from './Legal'
  */
 export const HOST_URL: string = import.meta.env.VITE_HOST_URL || './host/'
 
-const TEXT = {
+const TEXT_BASE = {
   en: {
     button: 'Host version',
     title: 'One screen or two?',
@@ -56,6 +57,26 @@ const TEXT = {
     stay: 'ابقَ هنا',
   },
 } as const
+const TEXT = {
+  ...TEXT_BASE,
+  ur: {
+    button: 'میزبان ورژن',
+    title: 'ایک اسکرین یا دو؟',
+    intro: 'آپ عام ورژن استعمال کر رہے ہیں۔ میزبان ورژن یہی کھیل ہے، ہال کے سامنے چلانے کے لیے ترتیب دیا ہوا۔',
+    regularHead: 'عام ورژن (یہ والا)',
+    regular: ['ایک اسکرین۔ میزبان سمیت سب ایک ہی بورڈ دیکھتے ہیں۔', 'جواب ظاہر کرنے پر اسی اسکرین پر آتا ہے۔', 'گھر میں لیپ ٹاپ یا ٹی وی، چھوٹے گروپ یا مشق کے لیے بہترین۔'],
+    hostHead: 'میزبان ورژن',
+    host: [
+      'دو اسکرینیں۔ آپ کھیل اپنے لیپ ٹاپ پر چلاتے ہیں اور پروجیکٹر کے لیے ناظرین کی الگ اسکرین کھولتے ہیں۔',
+      'ہال بورڈ، سوال اور نمبر دیکھتا ہے۔ جواب صرف آپ کے ظاہر کرنے پر نظر آتا ہے۔',
+      'فیصلہ کرنے سے پہلے صرف آپ اپنے لیپ ٹاپ پر جواب دیکھ سکتے ہیں۔',
+      'کلاسوں، مقابلوں اور پروجیکٹر والی تقریبات کے لیے بہترین۔',
+    ],
+    note: 'آپ کے اپنے زمرے زمرہ ساز میں برآمد اور درآمد سے منتقل ہو سکتے ہیں۔',
+    go: 'میزبان ورژن کھولیں',
+    stay: 'یہیں رہیں',
+  },
+}
 
 export function HostLink({ lang, href = HOST_URL }: { lang: Lang; href?: string }) {
   const [open, setOpen] = useState(false)
@@ -76,7 +97,7 @@ function HostInfo({ lang, href, onClose }: { lang: Lang; href: string; onClose: 
   const x = TEXT[lang]
   return (
     <div className="legal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="legal-panel host-info" role="dialog" aria-modal="true" aria-labelledby="host-info-title" ref={ref} data-testid="host-info" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
+      <div className="legal-panel host-info" role="dialog" aria-modal="true" aria-labelledby="host-info-title" ref={ref} data-testid="host-info" dir={dirOf(lang)} lang={lang}>
         <div className="legal-head">
           <h1 id="host-info-title">{x.title}</h1>
         </div>
