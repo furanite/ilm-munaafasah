@@ -3,7 +3,8 @@ import { TIE_MAX, TIE_VALUE, addLog, createGame, missTie, nextTie, score, standi
 import { cleanGameExtras } from '../src/lib/store'
 import { publicGame } from '../src/lib/views'
 import { champion, cleanBracket, drawHeats, group, newDivision, roundName, setWinner } from '../src/lib/bracket'
-import { hostReads } from '../src/lib/voice'
+import { secsUntil } from '../src/components/Lobby'
+import { hostReads, setVoiceEnabled, speakClue } from '../src/lib/voice'
 import { STRINGS } from '../src/lib/i18n'
 import type { Category, Game } from '../src/lib/types'
 // Sheets.tsx imports React components; the pure helpers are what's tested here.
@@ -176,5 +177,36 @@ describe('read-aloud', () => {
     expect(hostReads('بِسۡمِ ٱللَّهِ …')).toBe(true)
     expect(hostReads('Complete it: ﴿ قُلْ هُوَ ٱللَّهُ أَحَدٌ ﴾')).toBe(true)
     expect(hostReads('The month of fasting.')).toBe(false)
+  })
+
+  it('checks every language of a clue: a translation without the sign is still left to the host', () => {
+    const said: string[] = []
+    const g = globalThis as unknown as Record<string, unknown>
+    g.window = { speechSynthesis: { cancel() {}, getVoices: () => [], speak: (u: { text: string }) => said.push(u.text) } }
+    g.SpeechSynthesisUtterance = class { text: string; constructor(t: string) { this.text = t } }
+    try {
+      setVoiceEnabled(true)
+      speakClue('الملك الذي نزل بالوحي.', 'ar', ['The angel ﵇ who brought the revelation.', 'الملك الذي نزل بالوحي.'])
+      expect(said).toEqual([])
+      speakClue('شهر الصيام.', 'ar', ['The month of fasting.'])
+      expect(said).toEqual(['شهر الصيام.'])
+    } finally {
+      setVoiceEnabled(false)
+      delete g.window
+      delete g.SpeechSynthesisUtterance
+    }
+  })
+})
+
+describe('waiting screen countdown', () => {
+  const at = (h: number, m: number) => new Date(2026, 10, 20, h, m, 0, 0).getTime()
+  it('counts down to a time later today, and stops once it has passed', () => {
+    expect(secsUntil('19:30', at(19, 0))).toBe(1800)
+    expect(secsUntil('19:00', at(19, 5))).toBeNull()
+    expect(secsUntil('', at(19, 5))).toBeNull()
+  })
+  it('takes a time just after midnight as tomorrow\'s', () => {
+    expect(secsUntil('00:15', at(23, 30))).toBe(45 * 60)
+    expect(secsUntil('01:00', at(22, 30))).toBe(150 * 60)
   })
 })
