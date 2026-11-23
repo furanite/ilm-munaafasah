@@ -26,6 +26,8 @@ app files are overwritten by the next sync.
 - **Sounds:** breeze, birdsong and a deep daff only, with no melodic instruments (`src/lib/sound-isl.ts`).
 - **10 themed nights**, including Ramadan Special, Hajj and Eid al-Adha, Blessed Mawlid Night and a night
   for each school of fiqh (`questions/nights-islamic.json`).
+- **Overall difficulty:** Easy, Balanced (the default), Standard or Hard. Points stay the same; the setting
+  changes which question levels each row draws from.
 - **Shared with Get Grilled:** golden, steal and audience tiles, streaks, comeback, lightning round, final
   question, tie-breaker, tournaments, category vote, special rounds (where the chosen categories offer
   them), team introductions, time limits, game log and judges' sheet, backup sheet, bracket, waiting
