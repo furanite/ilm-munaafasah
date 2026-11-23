@@ -411,7 +411,7 @@ A puzzle like SEND + MORE = MONEY, where letters stand for digits, is called thi
 In SEND + MORE = MONEY, the letter M stands for this digit. :: 1
 
 ## 500
-A man walks into a bar and asks for water; the bartender pulls out a gun. This classic lateral-thinking puzzle's cure was a fright for this. :: Hiccups
+A man walks into a shop and asks for water; the shopkeeper pulls out a gun. This classic lateral-thinking puzzle's cure was a fright for this. :: Hiccups
 Paul Sloane popularised this kind of puzzle, where you ask yes/no questions to find the hidden story. :: Lateral thinking puzzles
 The British author of "The Canterbury Puzzles" (1907). :: Henry Dudeney
 The American puzzle maker who created "Get Off the Earth" and thousands of puzzles in the 1800s. :: Sam Loyd
