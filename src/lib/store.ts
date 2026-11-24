@@ -276,6 +276,7 @@ function cleanItems(raw: unknown[]): ModeItem[] {
       if (isDiagram(x.img)) it.img = x.img
       if (x.v === 0 || x.v === 1) it.v = x.v
       if (x.k === 'true' || x.k === 'halal' || x.k === 'legal') it.k = x.k
+      for (const key of ['qAr', 'aAr', 'qUr', 'aUr', 'catAr', 'catUr'] as const) if (isStr(x[key])) it[key] = x[key] as string
       if (isStr(x.cat)) it.cat = x.cat
       if (isStr(x.from)) it.from = x.from
       return it

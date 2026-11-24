@@ -47,6 +47,8 @@ const NO_CAT = { id: '', name: '' }
 function blankQ<T extends Question | ModeItem>(q: T): T {
   const out = { ...q, q: HIDDEN, a: HIDDEN } as T
   delete (out as ModeItem).cat
+  delete (out as ModeItem).catAr
+  delete (out as ModeItem).catUr
   delete (out as Question).qAr
   delete (out as Question).aAr
   delete (out as Question).qUr
@@ -112,10 +114,14 @@ export function publicGame(game: Game, screen: Screen, live: Live | null): Game 
         // Clue by clue: only the clues shown so far; the rest stay as blanks so the count still reads right.
         if (mode === 'clues') {
           const shown = st.shown ?? 1
-          open.q = item.q
-            .split(' | ')
-            .map((s, k) => (k < shown ? s : '…'))
-            .join(' | ')
+          const cut = (text: string) =>
+            text
+              .split(' | ')
+              .map((s, k) => (k < shown ? s : '…'))
+              .join(' | ')
+          open.q = cut(item.q)
+          if (item.qAr) open.qAr = cut(item.qAr)
+          if (item.qUr) open.qUr = cut(item.qUr)
         }
         return open
       }),

@@ -29,10 +29,10 @@ describe('translated lines keep the honorific signs', () => {
       if (!existsSync(p)) continue
       it(`${lang}/${f}`, () => {
         const parsed = parsePack(readFileSync(join(dir, f), 'utf8'), f)
-        const { levels, errors } = mergeArabic(parsed.levels, readFileSync(p, 'utf8'), `${lang}/${f}`, [...keys])
+        const { levels, modes, errors } = mergeArabic(parsed.levels, readFileSync(p, 'utf8'), `${lang}/${f}`, [...keys], undefined, parsed.modes)
         expect(errors).toEqual([])
         const bad: string[] = []
-        for (const lvl of levels) {
+        for (const lvl of [...levels, ...Object.values(modes ?? {})]) {
           for (const x of lvl as Record<string, string>[]) {
             const en = `${x.q} :: ${x.a}`
             const tr = `${x[keys[0]]} :: ${x[keys[1]]}`

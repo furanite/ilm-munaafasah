@@ -186,24 +186,35 @@ export function questionKey({ q, img }) {
 
 const digits = (s) => (s.replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x660)).match(/\d+/g) ?? []).sort().join(',')
 
-// Reads an Arabic file and pairs it with the parsed English levels.
-export function mergeArabic(levels, text, file = 'ar', keys = ['qAr', 'aAr'], label = 'Arabic') {
+// Reads an Arabic (or Urdu) file and pairs it with the parsed English levels, and with the special-round
+// sections ("## tf", "## odd" ...) when the file has them: one line per English item, in the same order.
+export function mergeArabic(levels, text, file = 'ar', keys = ['qAr', 'aAr'], label = 'Arabic', modes) {
   const errors = []
   const ar = LEVELS.map(() => [])
+  const arModes = {}
   let cur = -1
+  let mode = null
   text.split(/\r?\n/).forEach((raw, i) => {
     const line = raw.trim()
     const at = `${file}:${i + 1}`
     if (!line || (line.startsWith('#') && !line.startsWith('##'))) return
     if (line.startsWith('##')) {
-      cur = LEVELS.indexOf(line.slice(2).trim())
+      const v = line.slice(2).trim()
+      mode = MODES.includes(v) ? v : null
+      if (mode) {
+        if (arModes[mode]) errors.push(`${at} the "## ${v}" section appears twice`)
+        arModes[mode] = arModes[mode] ?? []
+        cur = 0
+        return
+      }
+      cur = LEVELS.indexOf(v)
       if (cur < 0) errors.push(`${at} unknown level`)
       return
     }
     if (cur < 0) { errors.push(`${at} line before any "## level" heading`); return }
     const parts = line.split(/(?<=^|\s)::(?=\s|$)/)
     if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) { errors.push(`${at} needs "clue :: answer"`); return }
-    ar[cur].push({ q: parts[0].trim(), a: parts[1].trim(), at })
+    ;(mode ? arModes[mode] : ar[cur]).push({ q: parts[0].trim(), a: parts[1].trim(), at })
   })
   const out = levels.map((lvl, li) => {
     if (ar[li].length !== lvl.length) {
@@ -216,7 +227,29 @@ export function mergeArabic(levels, text, file = 'ar', keys = ['qAr', 'aAr'], la
       return { ...qa, [keys[0]]: t.q, [keys[1]]: t.a }
     })
   })
-  return { levels: out, errors }
+  // Special rounds: a section may be left out (the round then shows the English), but one that is there
+  // must match the English item for item, with as many clues or choices on each line.
+  // Callers that pass no English special rounds only want the levels checked.
+  let outModes = modes
+  if (modes) for (const m of Object.keys(arModes)) if (!modes[m]) errors.push(`${file}: has a "## ${m}" section that the English file does not have`)
+  if (modes) {
+    outModes = Object.fromEntries(Object.entries(modes).map(([m, list]) => {
+      const tr = arModes[m]
+      if (!tr) return [m, list]
+      if (tr.length !== list.length) {
+        errors.push(`${file}: the "## ${m}" section has ${tr.length} ${label} lines but ${list.length} English items`)
+        return [m, list]
+      }
+      return [m, list.map((x, i) => {
+        const t = tr[i]
+        if (digits(x.a) !== digits(t.a)) errors.push(`${t.at} numbers in the answer differ from the English (${x.a}), lines may be out of step`)
+        if ((m === 'clues' || m === 'odd') && t.q.split(' | ').length !== x.q.split(' | ').length) errors.push(`${t.at} needs as many " | " parts as the English`)
+        if (m === 'odd' && !t.q.split(' | ').some((y) => t.a.startsWith(y.trim()))) errors.push(`${t.at} the odd-one-out answer must start with one of the items`)
+        return { ...x, [keys[0]]: t.q, [keys[1]]: t.a }
+      })]
+    }))
+  }
+  return { levels: out, modes: outModes, errors }
 }
 
 /** A short stable id for a question: changes whenever the clue or answer changes, so edited lines need a fresh review. */
@@ -301,19 +334,21 @@ function main() {
     let arCount = 0
     const arPath = join(srcDir, 'ar', f)
     if (existsSync(arPath)) {
-      const m = mergeArabic(levels, readFileSync(arPath, 'utf8'), `ar/${f}`)
+      const m = mergeArabic(levels, readFileSync(arPath, 'utf8'), `ar/${f}`, undefined, undefined, modes)
       errors = errors.concat(m.errors)
       if (m.errors.length) continue
       levels = m.levels
+      modes = m.modes
       arCount = levels.reduce((s, l) => s + l.length, 0)
     }
     // Urdu (Munaafasatul Ilm only): questions/ur/<file>, one line per question, same order as the English.
     const urPath = join(srcDir, 'ur', f)
     if (existsSync(urPath)) {
-      const m = mergeArabic(levels, readFileSync(urPath, 'utf8'), `ur/${f}`, ['qUr', 'aUr'], 'Urdu')
+      const m = mergeArabic(levels, readFileSync(urPath, 'utf8'), `ur/${f}`, ['qUr', 'aUr'], 'Urdu', modes)
       errors = errors.concat(m.errors)
       if (m.errors.length) continue
       levels = m.levels
+      modes = m.modes
     }
     const respect = RESPECT_GROUPS.includes(meta.group) || undefined
     if (respect) {

@@ -12,6 +12,11 @@ type Names = { name: string; nameAr?: string; nameUr?: string }
 /** A clue in the chosen language, or the English when it has not been translated yet. */
 export const qOf = (x: Texts, l: Lang) => (l === 'ar' && x.qAr) || (l === 'ur' && x.qUr) || x.q
 export const aOf = (x: Texts, l: Lang) => (l === 'ar' && x.aAr) || (l === 'ur' && x.aUr) || x.a
+/** A special-round item in the chosen language: its clue, answer and category name. */
+export function itemIn<T extends Texts & { cat?: string; catAr?: string; catUr?: string }>(x: T, l: Lang): T {
+  const cat = x.cat ? (l === 'ar' && x.catAr) || (l === 'ur' && x.catUr) || x.cat : x.cat
+  return { ...x, q: qOf(x, l), a: aOf(x, l), ...(cat !== undefined ? { cat } : {}) }
+}
 export const nameOf = (c: Names, l: Lang) => (l === 'ar' && c.nameAr) || (l === 'ur' && c.nameUr) || c.name
 /** A category's name in the chosen language, with its name in the other language beneath it. */
 export const namePair = (c: Names, l: Lang): [string, string | undefined] =>

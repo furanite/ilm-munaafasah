@@ -74,6 +74,20 @@ describe('Arabic question files', () => {
     expect(swapped.errors.join()).toMatch(/out of step/)
     expect(mergeArabic(en, 'بلا عنوان :: x\n').errors.join()).toMatch(/before any/)
   })
+  it('pairs special-round sections item by item, and checks their shape', () => {
+    const p = parsePack('id: t\nname: T\ngroup: general\n## 100\nOne :: 1938\nTwo :: b\n## 200\nB :: b\n## 300\nC :: c\n## 400\nD :: d\n## 500\nE :: e\n## tf\nS1 :: True\nS2 :: False (3 not 4)\n## odd\nA | B | C | D :: D: not a letter\n')
+    const lv = '## 100\nواحد :: 1938\nاثنان :: ب\n## 200\nب :: ب\n## 300\nج :: ج\n## 400\nد :: د\n## 500\nه :: ه\n'
+    const ok = mergeArabic(p.levels, lv + '## tf\nع1 :: صحيح\nع2 :: خطأ (3 لا 4)\n## odd\nأ | ب | ج | د :: د: ليست حرفًا\n', 'ar', undefined, undefined, p.modes)
+    expect(ok.errors).toEqual([])
+    expect(ok.modes.tf[1]).toMatchObject({ q: 'S2', v: 0, qAr: 'ع2', aAr: 'خطأ (3 لا 4)' })
+    // A section may be left out: that round stays English.
+    expect(mergeArabic(p.levels, lv + '## tf\nع1 :: صحيح\nع2 :: خطأ (3 لا 4)\n', 'ar', undefined, undefined, p.modes).modes.odd[0].qAr).toBeUndefined()
+    const bad = mergeArabic(p.levels, lv + '## tf\nع1 :: صحيح\n## odd\nأ | ب | ج :: هـ\n## case\nق :: ح\n', 'ar', undefined, undefined, p.modes).errors.join('\n')
+    expect(bad).toMatch(/"## tf" section has 1 Arabic lines but 2/)
+    expect(bad).toMatch(/as many " \| " parts/)
+    expect(bad).toMatch(/must start with one of the items/)
+    expect(bad).toMatch(/"## case" section that the English file does not have/)
+  })
 })
 
 describe('built-in question files', () => {
@@ -107,7 +121,9 @@ describe('built-in question files', () => {
       else r.levels.forEach((l: unknown[]) => expect(l.length).toBeGreaterThanOrEqual(allPictures ? 30 : 100))
       for (const l of r.levels) for (const q of l as { img?: string }[]) if (q.img) expect(existsSync(join(dir, 'img', q.img.replace('packs/img/', ''))), q.img).toBe(true)
       const arPath = join(dir, 'ar', f)
-      if (existsSync(arPath)) expect(mergeArabic(r.levels, readFileSync(arPath, 'utf8'), f).errors).toEqual([])
+      if (existsSync(arPath)) expect(mergeArabic(r.levels, readFileSync(arPath, 'utf8'), f, undefined, undefined, r.modes).errors).toEqual([])
+      const urPath = join(dir, 'ur', f)
+      if (existsSync(urPath)) expect(mergeArabic(r.levels, readFileSync(urPath, 'utf8'), `ur/${f}`, ['qUr', 'aUr'], 'Urdu', r.modes).errors).toEqual([])
     })
   }
 })

@@ -25,7 +25,7 @@ import { Ambient, CatIcon, Flourish, FlourishAbove, Mark } from './Brand'
 import { diagramSrc } from '../lib/diagram'
 import { GameClock, TimerBar } from './Timer'
 import { qLen } from '../lib/qlen'
-import { setDocLang, qOf, aOf, nameOf, namePair } from '../lib/lang'
+import { setDocLang, qOf, aOf, nameOf, namePair, itemIn } from '../lib/lang'
 
 /**
  * Opens a second browser window that the host drags onto the projector.
@@ -265,7 +265,7 @@ export function AudienceView({ t, lang, theme, screen, game, live, vote, win, no
   if (screen === 'mode' && game?.modeRound) {
     const { mode, items } = game.modeRound
     const st = game.modeState
-    const item = st && !st.done ? items[st.i] : undefined
+    const item = st && !st.done && items[st.i] ? itemIn(items[st.i], lang) : undefined
     const n = item && mode === 'clues' ? cluesOf(item).length : 0
     const shown = st?.revealed ? n : (st?.shown ?? 1)
     const worth = item ? (mode === 'clues' ? cluePoints(item, shown) : MODE_VALUE) : 0

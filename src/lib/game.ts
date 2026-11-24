@@ -171,8 +171,9 @@ export const oddItems = (item: ModeItem) => item.q.split(' | ').map((s) => s.tri
 
 /** Every item a category can give a special round. Picture rounds use its picture questions. */
 export function modeItemsOf(cat: Category, mode: RoundMode): ModeItem[] {
-  if (mode === 'picture') return cat.levels.flat().filter((q) => q.img).map(({ id, q, a, img }) => ({ id, q, a, img, cat: cat.name, from: cat.id }))
-  return (cat.modes?.[mode] ?? []).map((x) => ({ ...x, cat: cat.name, from: cat.id }))
+  const names = { cat: cat.name, ...(cat.nameAr ? { catAr: cat.nameAr } : {}), ...(cat.nameUr ? { catUr: cat.nameUr } : {}), from: cat.id }
+  if (mode === 'picture') return cat.levels.flat().filter((q) => q.img).map(({ id, q, a, img, qAr, aAr, qUr, aUr }) => ({ id, q, a, img, ...(qAr ? { qAr, aAr } : {}), ...(qUr ? { qUr, aUr } : {}), ...names }))
+  return (cat.modes?.[mode] ?? []).map((x) => ({ ...x, ...names }))
 }
 
 /**
