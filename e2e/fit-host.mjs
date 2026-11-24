@@ -118,7 +118,13 @@ async function run(lang, theme) {
 
 try {
   for (const lang of langs) for (const theme of themes) {
-    try { await run(lang, theme) } catch (e) { errors.push(`${lang}/${theme}: ${String(e.message || e).split('\n')[0]}`); console.log('ERROR', lang, theme, String(e.message || e).split('\n')[0]) }
+    try { await run(lang, theme) } catch (e) {
+      const msg = String(e.message || e)
+      errors.push(`${lang}/${theme}: ${msg.split('\n')[0]}`)
+      console.log('ERROR', lang, theme, msg.split('\n')[0])
+      // Playwright's call log says which button it was waiting for and what was in the way.
+      for (const line of msg.split('\n').slice(1, 25)) if (line.trim()) console.log('   ', line.trim())
+    }
   }
 } finally {
   await browser.close()

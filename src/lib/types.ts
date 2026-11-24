@@ -69,6 +69,11 @@ export interface ModeItem {
   q: string
   a: string
   img?: string
+  /** Arabic and Urdu, where the item has been translated */
+  qAr?: string
+  aAr?: string
+  qUr?: string
+  aUr?: string
   v?: 0 | 1
   k?: 'true' | 'halal' | 'legal'
   /** Source tag (religious categories): historical with its source, dramatised or fictional */
@@ -76,6 +81,8 @@ export interface ModeItem {
   src?: string
   /** The category it came from (name shown with the item, and its id) */
   cat?: string
+  catAr?: string
+  catUr?: string
   from?: string
 }
 

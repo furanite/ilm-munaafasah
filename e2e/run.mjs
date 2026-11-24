@@ -504,6 +504,23 @@ try {
       if (mode === 'picture') await page.waitForFunction(() => document.querySelector('[data-testid="mode-img"]')?.naturalWidth > 0)
       if (mode === 'tf') assert(/(True or false|Halal or not|Legal or not)\?/.test(await page.textContent('.mode-ask')), 'tf asks for a verdict')
       await page.screenshot({ path: `${SHOTS}/mode-${mode}.png` })
+      if (mode !== 'picture') {
+        // The same item in Urdu and Arabic: its own translation, not the English.
+        const item = await page.evaluate(() => { const g = JSON.parse(localStorage.getItem('gg.game.ilm.v1')); return g.modeRound.items[g.modeState.i] })
+        assert(item.qUr && item.qAr, `${cat} ${mode} item has Arabic and Urdu`)
+        for (const lang of ['ur', 'ar']) {
+          await page.evaluate((lang) => { const s = JSON.parse(localStorage.getItem('gg.settings.ilm.v1') || '{}'); localStorage.setItem('gg.settings.ilm.v1', JSON.stringify({ ...s, lang })) }, lang)
+          await page.reload()
+          await page.getByRole('button', { name: /resume game|متابعة اللعبة|کھیل جاری رکھیں/i }).first().click()
+          await page.waitForSelector(sel)
+          // Urdu is only offered in the Munaafasatul Ilm build; the general build stays on English for it.
+          if (lang === 'ur' && (await page.getAttribute('html', 'lang')) !== 'ur') continue
+          const want = (lang === 'ur' ? item.qUr : item.qAr).split(' | ')
+          const shown = mode === 'odd' ? await page.locator(sel).allTextContents() : [await page.textContent(sel)]
+          assert(JSON.stringify(shown.map((x) => x.trim())) === JSON.stringify(want.map((x) => x.trim())), `${lang} ${mode} shows ${JSON.stringify(shown)}, wanted ${JSON.stringify(want)}`)
+          await page.screenshot({ path: `${SHOTS}/mode-${mode}-${lang}.png` })
+        }
+      }
       assert(page.errors.length === 0, 'console errors: ' + page.errors.join(' | '))
       await page.context().close()
     }

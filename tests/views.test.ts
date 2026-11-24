@@ -118,6 +118,22 @@ describe('what other devices may see', () => {
     expect(publicGame(g, 'mode', null).modeRound!.items[1].v).toBe(1)
   })
 
+  it('special rounds in Arabic and Urdu: the same clues held back, no answers, no other item\'s text', () => {
+    const g = game()
+    g.modeRound!.items = [
+      { q: 'c1 | c2 | c3', a: 'MANS0', qAr: 'ت1 | ت2 | ت3', aAr: 'جواب0', qUr: 'ا1 | ا2 | ا3', aUr: 'جواب اردو0', cat: 'C', catAr: 'فئة', catUr: 'زمرہ' },
+      { q: 'TF', a: 'MANS1', qAr: 'سؤال1', aAr: 'جواب1', qUr: 'سوال1', aUr: 'جواب اردو1', cat: 'C', catAr: 'فئة', catUr: 'زمرہ', v: 1, k: 'true' },
+    ]
+    g.modeState = { i: 0, revealed: false, shown: 2 }
+    const s = publicGame(g, 'mode', null)
+    const [open, hidden] = s.modeRound!.items
+    expect([open.qAr, open.qUr]).toEqual(['ت1 | ت2 | …', 'ا1 | ا2 | …'])
+    expect([open.aAr, open.aUr]).toEqual([undefined, undefined])
+    expect(JSON.stringify(hidden)).not.toMatch(/سؤال1|سوال1|جواب|فئة|زمرہ/)
+    g.modeState.revealed = true
+    expect(publicGame(g, 'mode', null).modeRound!.items[0].aUr).toBe('جواب اردو0')
+  })
+
   it('tournament rounds keep their kinds and categories but none of their questions', () => {
     const s = text(publicGame(game(), 'round', null))
     expect(s).not.toMatch(/TQ|TFQ|TANS|TFANS/)

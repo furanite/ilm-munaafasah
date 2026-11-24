@@ -12,7 +12,7 @@ import { CatIcon } from './Brand'
 import { sfx } from '../lib/sound'
 import { burstAt } from '../lib/fx'
 import { qLen } from '../lib/qlen'
-import { qOf, aOf, nameOf } from '../lib/lang'
+import { qOf, aOf, nameOf, itemIn } from '../lib/lang'
 
 interface Props {
   t: Strings
@@ -338,7 +338,7 @@ export function ModeRound({ t, lang, game, setGame, onDone, hasFinal }: Props) {
   const items = round?.items ?? []
   const mode = round?.mode ?? 'tf'
   const st = game.modeState
-  const item = st ? items[st.i] : undefined
+  const item = st && items[st.i] ? itemIn(items[st.i], lang) : undefined
   const done = !!st && (st.done || st.i >= items.length)
   const shown = st?.shown ?? 1
   const worth = item ? (mode === 'clues' ? cluePoints(item, st?.revealed ? cluesOf(item).length : shown) : MODE_VALUE) : 0
